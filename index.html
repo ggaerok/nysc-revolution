@@ -186,7 +186,7 @@ document.getElementById('goBtn').onclick=()=>{
   msg.textContent='';
   teams=names.map((n,i)=>({name:n,c:COLORS[i]}));
   data=EVENTS.map(()=>teams.map(()=>({rec:null,fail:false})));
-  sel=null;undoSnap=null;lastMeasure=null;resetSW();buildBoard();
+  sel=null;undoStack=[];lastMeasure=null;resetSW();buildBoard();
   show('boardScreen');
   fitFont();
 };
@@ -293,13 +293,14 @@ function selectCell(e,t){
     if(inp){inp.focus();inp.select()}
   }
 }
-/* 되돌리기: 마지막 변경 1단계만 저장 */
-let undoSnap=null,lastMeasure=null,manualMode=false,runCell=null;
+/* 되돌리기: 최근 변경을 최대 30단계까지 저장 */
+const UNDO_MAX=30;
+let undoStack=[],lastMeasure=null,manualMode=false,runCell=null;
 const bUndo=document.getElementById('bUndo');
 function mutate(fn){
   const before=JSON.stringify(data);
   fn();
-  if(JSON.stringify(data)!==before){undoSnap=before;bUndo.disabled=false}
+  if(JSON.stringify(data)!==before){undoStack.push(before);if(undoStack.length>UNDO_MAX)undoStack.shift();bUndo.disabled=false}
 }
 function commitCount(e,t,v){
   const d=data[e][t];
@@ -411,13 +412,13 @@ document.getElementById('bClear').onclick=()=>{
   render();
 };
 bUndo.onclick=()=>{
-  if(!undoSnap)return;
+  if(!undoStack.length)return;
   if(running)resetSW();
-  data=JSON.parse(undoSnap);undoSnap=null;lastMeasure=null;bUndo.disabled=true;
+  data=JSON.parse(undoStack.pop());lastMeasure=null;bUndo.disabled=!undoStack.length;
   render();hint('직전 변경을 되돌렸습니다.');
 };
 document.getElementById('bHome').onclick=()=>{
-  resetSW();setManual(false);sel=null;teams=[];data=[];undoSnap=null;lastMeasure=null;bUndo.disabled=true;board.innerHTML='';
+  resetSW();setManual(false);sel=null;teams=[];data=[];undoStack=[];lastMeasure=null;bUndo.disabled=true;board.innerHTML='';
   inputs.forEach(i=>i.value='');msg.textContent='';
   show('setup');
 };
