@@ -303,7 +303,14 @@ function commitCount(e,t,v){
 /* ---------- 스톱워치 ---------- */
 let running=false,t0=0,elapsed=0,raf=0;
 const swTime=document.getElementById('swTime');
-function tick(){elapsed=performance.now()-t0;swTime.textContent=fmt(elapsed);raf=requestAnimationFrame(tick)}
+const MAX_MS=10*60*1000;
+function tick(){
+  elapsed=performance.now()-t0;
+  if(elapsed>=MAX_MS){            // 10분 초과: 0:00.00으로 돌아가며 정지 (기록하지 않음)
+    resetSW();hint('10분을 넘어 스톱워치가 멈췄습니다. 기록되지 않았습니다.');return;
+  }
+  swTime.textContent=fmt(elapsed);raf=requestAnimationFrame(tick);
+}
 function resetSW(){cancelAnimationFrame(raf);running=false;elapsed=0;swTime.textContent='0:00.00';swTime.classList.remove('run');if(typeof setToggle==='function')setToggle()}
 
 const bToggle=document.getElementById('bToggle');
