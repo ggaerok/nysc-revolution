@@ -301,9 +301,9 @@ function calc(){
   const pts=EVENTS.map((_,e)=>{
     const arr=data[e].map((d,t)=>({t,v:d[0].rec})).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
     const p=teams.map(()=>0);
-    arr.forEach((x,i)=>{
-      const first=arr.findIndex(y=>y.v===x.v);   // 동점은 같은 점수
-      p[x.t]=N-first;
+    const distinct=[...new Set(arr.map(x=>x.v))];   // 큰 값부터 중복 제거
+    arr.forEach(x=>{
+      p[x.t]=N-distinct.indexOf(x.v);            // 동점은 같은 점수, 다음 순위는 이어서 (4,3,3,2)
     });
     return p;
   });
