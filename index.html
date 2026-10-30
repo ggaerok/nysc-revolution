@@ -89,6 +89,9 @@
   .prow{display:grid;grid-template-columns:42% minmax(0,1fr);gap:3px;min-height:0;min-width:0;background:#000}
   .pname{display:flex;align-items:center;justify-content:center;font-weight:800;color:#111;font-size:var(--nfs,20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;min-width:0}
   .r0 .pname{background:#d6e4f0}.r1 .pname{background:#f0f6fa}
+  /* 전체기록 방식: 종목의 모든 칸이 입력되면 최고 기록을 붉게 표시 (이름 글자는 검은색 유지) */
+  .prow.top .rec{color:#e60000}
+  .prow.top .rec,.prow.top .pname{box-shadow:inset 0 0 0 3px #e60000}
   .pcell .rec{font-size:var(--rfs,24px)}
   .pcell .rec input{font-size:var(--rfs,24px)}
   .tot{font-size:40px}
@@ -359,6 +362,13 @@ function renderAll(){
   EVENTS.forEach((ev,e)=>{
     const rc='r'+(e%2);
     h+=evHtml(ev,rc);
+    // 이 종목의 모든 칸에 기록(또는 실패 '-')이 입력되면 가장 큰 기록을 찾는다 (동점이면 모두)
+    const all=data[e].flat();
+    let top=null;
+    if(all.length&&all.every(d=>d.rec!==null||d.fail)){
+      const recs=all.filter(d=>d.rec!==null).map(d=>d.rec);
+      if(recs.length)top=Math.max(...recs);
+    }
     teams.forEach((t,ti)=>{
       const list=players[e][ti];
       if(!list.length){h+=`<div class="c pcell empty ${rc}">참가자 없음</div>`;return}
@@ -366,7 +376,8 @@ function renderAll(){
       list.forEach((nm,k)=>{
         const d=data[e][ti][k];
         const isSel=sel&&sel.e===e&&sel.t===ti&&sel.k===k;
-        h+=`<div class="prow unit ${isSel?'sel':''}" data-e="${e}" data-t="${ti}" data-k="${k}"><div class="pname" title="${esc(nm)}">${esc(nm)}</div>${recHtmlOf(ev,d,e,ti,k)}</div>`;
+        const isTop=top!==null&&d.rec===top;
+        h+=`<div class="prow unit ${isSel?'sel':''} ${isTop?'top':''}" data-e="${e}" data-t="${ti}" data-k="${k}"><div class="pname" title="${esc(nm)}">${esc(nm)}</div>${recHtmlOf(ev,d,e,ti,k)}</div>`;
       });
       h+='</div>';
     });
