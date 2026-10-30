@@ -36,18 +36,25 @@
   /* ---------- 점수판 화면 ---------- */
   #topbar{position:absolute;left:20px;top:10px;width:1880px;height:165px}
   #ttl{position:absolute;left:6px;top:14px}
-  #ttl h1{font-size:56px;letter-spacing:1px;color:#1d2a3c}
+  #ttl h1{font-size:52px;letter-spacing:1px;color:#1d2a3c}
   #ttl p{font-size:26px;color:#4a5d78;margin-top:8px}
   #sel{color:#d12b1f;font-weight:800}
-  #sw{position:absolute;right:0;top:0;width:1080px;height:165px;background:#c9d8e6;border-radius:20px;padding:14px 24px;display:flex;align-items:center;gap:24px}
-  #swTime{width:420px;height:130px;background:#0f111b;border-radius:16px;font-size:92px;font-weight:800;text-align:center;line-height:130px;font-variant-numeric:tabular-nums;letter-spacing:1px;color:#7dffb0;flex:none}
+  #sw{position:absolute;right:0;top:0;width:1120px;height:165px;background:#c9d8e6;border-radius:20px;padding:16px 20px;display:flex;align-items:stretch;gap:16px}
+  #swTime{width:360px;background:#0f111b;border-radius:16px;font-size:76px;font-weight:800;text-align:center;line-height:133px;font-variant-numeric:tabular-nums;letter-spacing:1px;color:#7dffb0;flex:none}
   #swTime.run{color:#ffe95a}
-  #swBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1}
-  .btn{height:60px;border:0;border-radius:12px;font-size:28px;font-weight:800;cursor:pointer;font-family:inherit;color:#fff}
-  .btn:active{transform:translateY(2px)}
-  #bToggle{background:#2e9e5b;grid-column:span 2}#bToggle.run{background:#d8a21c;color:#000}#bReset{background:#5b6285}
-  #bFail{background:#d94242}#bClear{background:#7a4fa8}#bHome{background:#3a4366}
-  #swHint{position:absolute;left:470px;bottom:6px;font-size:20px;color:#c4600a;height:26px;width:560px;text-align:left}
+  #bigBtns{display:flex;gap:10px;flex:none}
+  .btn{border:0;border-radius:14px;font-weight:800;cursor:pointer;font-family:inherit;color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.25);transition:filter .15s}
+  .btn:hover:not(:disabled){filter:brightness(1.1)}
+  .btn:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+  .btn.big{width:185px;font-size:44px}
+  #smallBtns{display:flex;flex-direction:column;gap:7px;width:128px;flex:none}
+  .btn.sm{flex:1;font-size:21px;border-radius:10px}
+  #bUndo{flex:1;font-size:26px;background:#2f6fb8}
+  #bUndo:disabled{background:#9db0c6;cursor:not-allowed;box-shadow:none}
+  #bToggle{background:#2e9e5b}#bToggle.run{background:#e0a812;color:#000}
+  #bFail{background:#d94242}
+  #bReset{background:#5b6285}#bClear{background:#7a4fa8}#bHome{background:#3a4366}
+  #ttl #swHint{font-size:22px;color:#c4600a;height:28px;margin-top:4px;font-weight:700}
 
   #board{position:absolute;left:20px;top:190px;width:1880px;height:876px;background:#000;padding:6px;display:grid;gap:6px;border-radius:4px}
   .c{display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;color:#000;overflow:hidden}
@@ -104,17 +111,20 @@
       <div id="ttl">
         <h1>회전하는 물체 그리고 공전</h1>
         <p>최고점 선택방식 · 선택된 칸: <span id="sel">없음</span></p>
+        <p id="swHint"></p>
       </div>
       <div id="sw">
         <div id="swTime">00:00.00</div>
-        <div id="swBtns">
-          <button class="btn" id="bToggle">시작</button>
-          <button class="btn" id="bReset">리셋</button>
-          <button class="btn" id="bFail">실패</button>
-          <button class="btn" id="bClear">칸 초기화</button>
-          <button class="btn" id="bHome">처음으로</button>
+        <div id="bigBtns">
+          <button class="btn big" id="bToggle">시작</button>
+          <button class="btn big" id="bFail">실패</button>
         </div>
-        <div id="swHint"></div>
+        <div id="smallBtns">
+          <button class="btn sm" id="bReset">리셋</button>
+          <button class="btn sm" id="bClear">칸 초기화</button>
+          <button class="btn sm" id="bHome">처음으로</button>
+        </div>
+        <button class="btn" id="bUndo" disabled>되돌리기</button>
       </div>
     </div>
     <div id="board"></div>
@@ -167,7 +177,7 @@ document.getElementById('goBtn').onclick=()=>{
   msg.textContent='';
   teams=names.map((n,i)=>({name:n,c:COLORS[i]}));
   data=EVENTS.map(()=>teams.map(()=>({rec:null,fail:false})));
-  sel=null;resetSW();buildBoard();
+  sel=null;undoSnap=null;lastMeasure=null;resetSW();buildBoard();
   show('boardScreen');
   fitFont();
 };
@@ -261,6 +271,7 @@ function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;
 function hint(t){const h=document.getElementById('swHint');h.textContent=t;clearTimeout(hint.t);if(t)hint.t=setTimeout(()=>h.textContent='',2500)}
 function selectCell(e,t){
   if(running){hint('측정 중에는 칸을 바꿀 수 없습니다.');return}
+  if(!sel||sel.e!==e||sel.t!==t)lastMeasure=null;
   sel={e,t};
   board.querySelectorAll('.cell').forEach(c=>c.classList.toggle('sel',+c.dataset.e===e&&+c.dataset.t===t));
   updateSelLabel();
@@ -269,13 +280,23 @@ function selectCell(e,t){
     if(inp){inp.focus();inp.select()}
   }
 }
+/* 되돌리기: 마지막 변경 1단계만 저장 */
+let undoSnap=null,lastMeasure=null;
+const bUndo=document.getElementById('bUndo');
+function mutate(fn){
+  const before=JSON.stringify(data);
+  fn();
+  if(JSON.stringify(data)!==before){undoSnap=before;bUndo.disabled=false}
+}
 function commitCount(e,t,v){
   const d=data[e][t];
-  if(v===''||v==='-'){ if(v==='-'&&d.rec===null)d.fail=true; }
-  else{
-    const n=parseInt(v,10);
-    if(!isNaN(n)&&(d.rec===null||n>d.rec)){d.rec=n;d.fail=false}
-  }
+  mutate(()=>{
+    if(v===''||v==='-'){ if(v==='-'&&d.rec===null)d.fail=true; }
+    else{
+      const n=parseInt(v,10);
+      if(!isNaN(n)&&(d.rec===null||n>d.rec)){d.rec=n;d.fail=false}
+    }
+  });
   render();
 }
 
@@ -291,30 +312,48 @@ bToggle.onclick=()=>{
   if(!running){
     if(!sel){hint('먼저 기록칸을 선택하세요.');return}
     if(EVENTS[sel.e].type==='count'){hint('카우보이많이는 숫자를 직접 입력하세요.');return}
+    lastMeasure=null;
     elapsed=0;t0=performance.now();running=true;swTime.classList.add('run');setToggle();tick();
   }else{
     cancelAnimationFrame(raf);elapsed=performance.now()-t0;running=false;
     swTime.textContent=fmt(elapsed);swTime.classList.remove('run');setToggle();
     const d=data[sel.e][sel.t];
-    if(d.rec===null||elapsed>d.rec){d.rec=Math.round(elapsed);d.fail=false}
+    lastMeasure={e:sel.e,t:sel.t,rec:d.rec,fail:d.fail};   // 이 측정 직전의 기록 보관
+    mutate(()=>{ if(d.rec===null||elapsed>d.rec){d.rec=Math.round(elapsed);d.fail=false} });
     render();
   }
 };
 document.getElementById('bReset').onclick=()=>resetSW();
+/* 실패: 측정 중이면 폐기 / 방금 정지로 기록된 값이 있으면 그 기록을 지우고 이전 기록으로 복원 */
 document.getElementById('bFail').onclick=()=>{
   if(!sel){hint('먼저 기록칸을 선택하세요.');return}
+  const wasRunning=running;
   resetSW();
-  const d=data[sel.e][sel.t];
-  if(d.rec===null)d.fail=true;      // 기존 기록이 있으면 그대로 유지
+  mutate(()=>{
+    const d=data[sel.e][sel.t];
+    if(!wasRunning&&lastMeasure&&lastMeasure.e===sel.e&&lastMeasure.t===sel.t){
+      d.rec=lastMeasure.rec;d.fail=lastMeasure.fail;     // 방금 측정값 삭제 → 이전 기록 복원
+    }
+    if(d.rec===null)d.fail=true;                          // 이전 기록이 없으면 '-'
+  });
+  lastMeasure=null;
   render();
 };
 document.getElementById('bClear').onclick=()=>{
   if(!sel){hint('초기화할 칸을 선택하세요.');return}
   if(running)resetSW();
-  data[sel.e][sel.t]={rec:null,fail:false};render();
+  lastMeasure=null;
+  mutate(()=>{data[sel.e][sel.t]={rec:null,fail:false}});
+  render();
+};
+bUndo.onclick=()=>{
+  if(!undoSnap)return;
+  if(running)resetSW();
+  data=JSON.parse(undoSnap);undoSnap=null;lastMeasure=null;bUndo.disabled=true;
+  render();hint('직전 변경을 되돌렸습니다.');
 };
 document.getElementById('bHome').onclick=()=>{
-  resetSW();sel=null;teams=[];data=[];board.innerHTML='';
+  resetSW();sel=null;teams=[];data=[];undoSnap=null;lastMeasure=null;bUndo.disabled=true;board.innerHTML='';
   inputs.forEach(i=>i.value='');msg.textContent='';
   show('setup');
 };
