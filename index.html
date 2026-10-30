@@ -40,7 +40,7 @@
   #ttl p{font-size:26px;color:#4a5d78;margin-top:8px}
   #sel{color:#d12b1f;font-weight:800}
   #sw{position:absolute;right:0;top:0;width:1120px;height:165px;background:#c9d8e6;border-radius:20px;padding:16px 20px;display:flex;align-items:stretch;gap:16px}
-  #swTime{width:360px;background:#0f111b;border-radius:16px;font-size:76px;font-weight:800;text-align:center;line-height:133px;font-variant-numeric:tabular-nums;letter-spacing:1px;color:#7dffb0;flex:none}
+  #swTime{width:360px;background:#0f111b;border-radius:16px;font-size:88px;font-weight:800;text-align:center;line-height:133px;font-variant-numeric:tabular-nums;letter-spacing:1px;color:#7dffb0;flex:none}
   #swTime.run{color:#ffe95a}
   #bigBtns{display:flex;gap:10px;flex:none}
   .btn{border:0;border-radius:14px;font-weight:800;cursor:pointer;font-family:inherit;color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.25);transition:filter .15s}
@@ -114,7 +114,7 @@
         <p id="swHint"></p>
       </div>
       <div id="sw">
-        <div id="swTime">00:00.00</div>
+        <div id="swTime">0:00.00</div>
         <div id="bigBtns">
           <button class="btn big" id="bToggle">시작</button>
           <button class="btn big" id="bFail">실패</button>
@@ -200,7 +200,7 @@ function calc(){
 }
 function fmt(ms){
   const cs=Math.floor(ms/10)%100,s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000);
-  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
+  return String(m)+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
 }
 
 /* ---------- 점수판 그리기 ---------- */
@@ -251,13 +251,13 @@ board.addEventListener('click',ev=>{
   const cell=ev.target.closest('.cell');
   if(cell)selectCell(+cell.dataset.e,+cell.dataset.t);
 });
-/* 팀 수에 맞춰 정해진 기록칸 폭에 '00:00.00'이 들어가도록 글자 크기를 한 번 계산 (기록이 들어와도 칸/글자 크기는 변하지 않음) */
+/* 팀 수에 맞춰 정해진 기록칸 폭에 '0:00.00'이 들어가도록 글자 크기를 한 번 계산 (기록이 들어와도 칸/글자 크기는 변하지 않음) */
 function fitFont(){
   const rec=board.querySelector('.cell .rec');
   if(!rec)return;
   const m=document.createElement('span');
   m.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;font-weight:800;font-size:100px;font-variant-numeric:tabular-nums;font-family:inherit';
-  m.textContent='00:00.00';
+  m.textContent='0:00.00';
   stage.appendChild(m);
   const w100=m.getBoundingClientRect().width/ (stage.getBoundingClientRect().width/1920);
   stage.removeChild(m);
@@ -304,7 +304,7 @@ function commitCount(e,t,v){
 let running=false,t0=0,elapsed=0,raf=0;
 const swTime=document.getElementById('swTime');
 function tick(){elapsed=performance.now()-t0;swTime.textContent=fmt(elapsed);raf=requestAnimationFrame(tick)}
-function resetSW(){cancelAnimationFrame(raf);running=false;elapsed=0;swTime.textContent='00:00.00';swTime.classList.remove('run');if(typeof setToggle==='function')setToggle()}
+function resetSW(){cancelAnimationFrame(raf);running=false;elapsed=0;swTime.textContent='0:00.00';swTime.classList.remove('run');if(typeof setToggle==='function')setToggle()}
 
 const bToggle=document.getElementById('bToggle');
 function setToggle(){bToggle.textContent=running?'정지':'시작';bToggle.classList.toggle('run',running)}
