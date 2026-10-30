@@ -59,9 +59,9 @@
   .ev{flex-direction:column;font-size:38px;line-height:1.18;background:#d6e4f0}
   .ev small{font-size:24px;font-weight:700;margin-top:4px}
   .r0{background:#d6e4f0}.r1{background:#f0f6fa}
-  .pair{display:grid;grid-template-columns:1fr 92px;gap:6px;background:#000;align-items:stretch;justify-content:stretch}
+  .pair{display:grid;grid-template-columns:minmax(0,1fr) var(--ptw,92px);grid-template-rows:minmax(0,1fr);gap:6px;min-width:0;min-height:0;background:#000;align-items:stretch;justify-content:stretch}
   .rec,.pt{display:flex;align-items:center;justify-content:center;font-weight:800;color:#111}
-  .rec{font-size:70px;font-variant-numeric:tabular-nums;cursor:pointer;position:relative}
+  .rec{font-size:var(--recfs,70px);font-variant-numeric:tabular-nums;cursor:pointer;position:relative;white-space:nowrap;overflow:hidden;min-width:0}
   .pt{font-size:56px;color:#c0392b}
   .r0 .rec,.r0 .pt{background:#d6e4f0}.r1 .rec,.r1 .pt{background:#f0f6fa}
   .cell{cursor:pointer}
@@ -69,7 +69,7 @@
   .cell.sel{box-shadow:inset 0 0 0 0 transparent}
   .cell.sel .rec{box-shadow:inset 0 0 0 8px #ff3b30}
   .rec.best{color:#0b5fb0}
-  .rec input{width:100%;height:100%;border:0;background:transparent;text-align:center;font-size:70px;font-weight:800;font-family:inherit;color:#111;outline:0;user-select:text}
+  .rec input{width:100%;height:100%;border:0;background:transparent;text-align:center;font-size:var(--recfs,70px);font-weight:800;font-family:inherit;color:#111;outline:0;user-select:text}
   .tot{font-size:40px}
   .totv{font-size:64px;color:#c0392b}
 </style>
@@ -169,6 +169,7 @@ document.getElementById('goBtn').onclick=()=>{
   data=EVENTS.map(()=>teams.map(()=>({rec:null,fail:false})));
   sel=null;resetSW();buildBoard();
   show('boardScreen');
+  fitFont();
 };
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id))}
 
@@ -196,8 +197,9 @@ function fmt(ms){
 const board=document.getElementById('board');
 function buildBoard(){
   const n=teams.length;
-  board.style.gridTemplateColumns=`170px repeat(${n},1fr)`;
-  board.style.gridTemplateRows=`120px repeat(4,1fr) 105px`;
+  board.style.gridTemplateColumns=`170px repeat(${n},minmax(0,1fr))`;
+  board.style.gridTemplateRows=`120px repeat(4,minmax(0,1fr)) 105px`;
+  board.style.setProperty('--ptw',n>=5?'80px':'92px');
   render();
 }
 function render(){
@@ -239,6 +241,20 @@ board.addEventListener('click',ev=>{
   const cell=ev.target.closest('.cell');
   if(cell)selectCell(+cell.dataset.e,+cell.dataset.t);
 });
+/* 팀 수에 맞춰 정해진 기록칸 폭에 '00:00.00'이 들어가도록 글자 크기를 한 번 계산 (기록이 들어와도 칸/글자 크기는 변하지 않음) */
+function fitFont(){
+  const rec=board.querySelector('.cell .rec');
+  if(!rec)return;
+  const m=document.createElement('span');
+  m.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;font-weight:800;font-size:100px;font-variant-numeric:tabular-nums;font-family:inherit';
+  m.textContent='00:00.00';
+  stage.appendChild(m);
+  const w100=m.getBoundingClientRect().width/ (stage.getBoundingClientRect().width/1920);
+  stage.removeChild(m);
+  const recW=rec.clientWidth;
+  const fs=Math.max(14,Math.min(70,Math.floor((recW-24)/w100*100)));
+  board.style.setProperty('--recfs',fs+'px');
+}
 function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
 /* ---------- 선택 / 입력 ---------- */
