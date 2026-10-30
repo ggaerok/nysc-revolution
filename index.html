@@ -37,7 +37,8 @@
   #topbar{position:absolute;left:20px;top:10px;width:1880px;height:165px}
   #ttl{position:absolute;left:6px;top:14px}
   #ttl h1{font-size:52px;letter-spacing:1px;color:#1d2a3c}
-  #ttl p{font-size:26px;color:#4a5d78;margin-top:8px}
+  #ttl{width:720px}
+  #ttl p{font-size:26px;color:#4a5d78;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #sel{color:#d12b1f;font-weight:800}
   #sw{position:absolute;right:0;top:0;width:1120px;height:165px;background:#c9d8e6;border-radius:20px;padding:16px 20px;display:flex;align-items:stretch;gap:16px}
   #swTime{width:360px;background:#0f111b;border-radius:16px;font-size:88px;font-weight:800;text-align:center;line-height:133px;font-variant-numeric:tabular-nums;letter-spacing:1px;color:#7dffb0;flex:none}
@@ -54,8 +55,7 @@
   #bUndo{background:#2f6fb8}
   #bManual{background:#b8651b}
   #bManual.on{background:#ff9d00;color:#000;outline:4px solid #7a3e00;outline-offset:-4px}
-  .manual .cell .rec{cursor:text}
-  .manual .cell:not(.sel){box-shadow:none}
+  .manual .unit .rec{cursor:text}
   #bUndo:disabled{background:#9db0c6;cursor:not-allowed;box-shadow:none}
   #bToggle{background:#2e9e5b}#bToggle.run{background:#e0a812;color:#000}
   #bFail{background:#d94242}
@@ -77,14 +77,40 @@
   .rec{font-size:var(--recfs,70px);font-variant-numeric:tabular-nums;cursor:pointer;position:relative;white-space:nowrap;overflow:hidden;min-width:0}
   .pt{font-size:56px;color:#c0392b}
   .r0 .rec,.r0 .pt{background:#d6e4f0}.r1 .rec,.r1 .pt{background:#f0f6fa}
-  .cell{cursor:pointer}
-  .cell.sel .rec,.cell.sel .pt{background:#fff3a8}
-  .cell.sel{box-shadow:inset 0 0 0 0 transparent}
-  .cell.sel .rec{box-shadow:inset 0 0 0 8px #ff3b30}
+  .unit{cursor:pointer}
+  .unit.sel .rec,.unit.sel .pt,.unit.sel .pname{background:#fff3a8}
+  .unit.sel .rec{box-shadow:inset 0 0 0 var(--selw,8px) #ff3b30}
   .rec.best{color:#0b5fb0}
   .rec input{width:100%;height:100%;border:0;background:transparent;text-align:center;font-size:var(--recfs,70px);font-weight:800;font-family:inherit;color:#111;outline:0;user-select:text}
+  /* 전체기록 방식: 팀×종목 칸을 참가자 수만큼 나눔 */
+  .pcell{display:grid;gap:3px;background:#000;min-height:0;min-width:0;align-items:stretch;justify-content:stretch;--selw:4px}
+  .pcell.empty{display:flex;align-items:center;justify-content:center;color:#7a8aa0;font-size:22px;font-weight:700;background:#d6e4f0}
+  .pcell.r1.empty{background:#f0f6fa}
+  .prow{display:grid;grid-template-columns:42% minmax(0,1fr);gap:3px;min-height:0;min-width:0;background:#000}
+  .pname{display:flex;align-items:center;justify-content:center;font-weight:800;color:#111;font-size:var(--nfs,20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;min-width:0}
+  .r0 .pname{background:#d6e4f0}.r1 .pname{background:#f0f6fa}
+  .pcell .rec{font-size:var(--rfs,24px)}
+  .pcell .rec input{font-size:var(--rfs,24px)}
   .tot{font-size:40px}
   .totv{font-size:64px;color:#c0392b}
+
+  /* ---------- 참가자 이름 입력 화면 ---------- */
+  #ntop{position:absolute;left:26px;top:10px;width:1868px;height:140px}
+  #ntitle h1{font-size:46px;color:#1d2a3c;letter-spacing:1px}
+  #ntitle p{font-size:22px;color:#4a5d78;margin-top:4px}
+  #ntitle #nmsg{color:#c4600a;font-weight:700;height:28px}
+  #nbtns{position:absolute;right:0;top:10px;display:flex;gap:14px}
+  #nbtns .btn{height:90px;font-size:38px}
+  #nBack{width:160px;background:#5b6285}
+  #nGo{width:320px;background:#3593b8}
+  #nameGrid{position:absolute;left:20px;top:162px;width:1880px;height:900px;background:#000;padding:6px;display:grid;gap:6px;grid-template-rows:90px repeat(4,minmax(0,1fr));border-radius:4px}
+  #nameGrid .th{font-size:36px}
+  #nameGrid .ev{font-size:34px}
+  .ncell{display:flex;flex-direction:column;gap:4px;padding:5px;min-height:0;min-width:0}
+  .ncell.r0{background:#d6e4f0}.ncell.r1{background:#f0f6fa}
+  .ncell input{flex:1;min-height:0;min-width:0;width:100%;border:2px solid #8ea4bd;border-radius:6px;background:#fff;color:#111;font-size:21px;font-weight:700;font-family:inherit;padding:0 10px;outline:0;user-select:text}
+  .ncell input:focus{border-color:#ff9d00;background:#fffbe6}
+  .ncell input::placeholder{color:#a7b4c4;font-weight:400}
 </style>
 </head>
 <body>
@@ -104,11 +130,27 @@
         <label class="mode"><input type="radio" name="mode" value="best" checked>
           <div class="box"><b>최고점 선택방식</b><span>시도할 때마다 기록을 비교해<br>가장 좋은 기록만 남깁니다.</span></div></label>
         <label class="mode"><input type="radio" name="mode" value="all">
-          <div class="box"><b>전체기록 표시 방식</b><span>모든 시도 기록을 표에 표시합니다.<br>(준비 중)</span></div></label>
+          <div class="box"><b>전체기록 표시 방식</b><span>참가자별 이름과 기록을 모두<br>표에 표시합니다. (점수 계산 없음)</span></div></label>
       </div>
       <div id="msg"></div>
       <button id="goBtn">기록하기</button>
     </div>
+  </div>
+
+  <!-- ===== 참가자 이름 입력 화면 (전체기록 방식) ===== -->
+  <div id="namesScreen" class="screen">
+    <div id="ntop">
+      <div id="ntitle">
+        <h1>참가자 이름 입력</h1>
+        <p>종목별로 팀마다 최대 5명까지 입력합니다. 입력한 순서대로 기록판에 표시되며 빈칸은 제외됩니다. (Enter = 다음 칸)</p>
+        <p id="nmsg"></p>
+      </div>
+      <div id="nbtns">
+        <button class="btn" id="nBack">뒤로</button>
+        <button class="btn" id="nGo">기록하기</button>
+      </div>
+    </div>
+    <div id="nameGrid"></div>
   </div>
 
   <!-- ===== 점수판 화면 ===== -->
@@ -116,7 +158,7 @@
     <div id="topbar">
       <div id="ttl">
         <h1>회전하는 물체 그리고 공전</h1>
-        <p>최고점 선택방식 · 선택된 칸: <span id="sel">없음</span></p>
+        <p><span id="modeTxt">최고점 방식</span> · 선택된 칸: <span id="sel">없음</span></p>
         <p id="swHint"></p>
       </div>
       <div id="sw">
@@ -170,33 +212,91 @@ for(let i=0;i<6;i++){
   teamGrid.appendChild(d);
 }
 const inputs=[...teamGrid.querySelectorAll('input')];
+const NAME_RE=/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣 ]/g;
 inputs.forEach(inp=>inp.addEventListener('input',()=>{
-  const v=inp.value.replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣 ]/g,'');
+  const v=inp.value.replace(NAME_RE,'');
   if(v!==inp.value)inp.value=v;
 }));
 const msg=document.getElementById('msg');
 
-let teams=[],data=[],sel=null;
+const MAXP=5;                       // 종목별·팀별 최대 참가자 수
+const newEntry=()=>({rec:null,fail:false});
+let mode='best',teams=[],players=[],data=[],sel=null;
+// data[e][t][k] = 종목 e, 팀 t, k번째 기록 (최고점 방식은 k=0 하나, 전체기록 방식은 참가자 수만큼)
 
 document.getElementById('goBtn').onclick=()=>{
   const names=inputs.map(i=>i.value.trim()).filter(v=>v);
-  const mode=document.querySelector('input[name=mode]:checked').value;
   if(names.length<2){msg.textContent='팀 이름을 2개 이상 입력해 주세요.';return}
-  if(mode==='all'){msg.textContent='전체기록 표시 방식은 아직 준비 중입니다. 최고점 선택방식을 선택해 주세요.';return}
   msg.textContent='';
   teams=names.map((n,i)=>({name:n,c:COLORS[i]}));
-  data=EVENTS.map(()=>teams.map(()=>({rec:null,fail:false})));
-  sel=null;undoStack=[];lastMeasure=null;resetSW();buildBoard();
-  show('boardScreen');
-  fitFont();
+  mode=document.querySelector('input[name=mode]:checked').value;
+  if(mode==='all'){buildNames();show('namesScreen');return}
+  startBoard();
 };
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id))}
 
-/* ---------- 순위/점수 ---------- */
+function startBoard(){
+  data=EVENTS.map((_,e)=>teams.map((_,t)=>mode==='all'?players[e][t].map(newEntry):[newEntry()]));
+  sel=null;undoStack=[];lastMeasure=null;runCell=null;bUndo.disabled=true;
+  resetSW();setManual(false);
+  document.getElementById('modeTxt').textContent=mode==='all'?'전체기록 방식':'최고점 방식';
+  buildBoard();
+  show('boardScreen');
+  fitAll();
+}
+
+/* ---------- 참가자 이름 입력 (전체기록 방식) ---------- */
+const nameGrid=document.getElementById('nameGrid');
+const nmsg=document.getElementById('nmsg');
+let nameDraft={};
+function buildNames(){
+  nmsg.textContent='';
+  nameGrid.style.gridTemplateColumns=`170px repeat(${teams.length},minmax(0,1fr))`;
+  let h=`<div class="c corner"><span class="t">팀</span><span class="j">종목</span></div>`;
+  teams.forEach(t=>h+=`<div class="c th" style="background:${t.c.bg};color:${t.c.fg}">${esc(t.name)}</div>`);
+  EVENTS.forEach((ev,e)=>{
+    const rc='r'+(e%2);
+    h+=`<div class="c ev ${rc}">${ev.name.map(x=>`<div>${x}</div>`).join('')}</div>`;
+    teams.forEach((t,ti)=>{
+      h+=`<div class="ncell ${rc}">`;
+      for(let k=0;k<MAXP;k++){
+        const key=`${e}|${ti}|${k}`;
+        h+=`<input type="text" maxlength="8" placeholder="참가자 ${k+1}" autocomplete="off" data-key="${key}" value="${esc(nameDraft[key]||'')}">`;
+      }
+      h+='</div>';
+    });
+  });
+  nameGrid.innerHTML=h;
+  const ins=[...nameGrid.querySelectorAll('input')];
+  ins.forEach((inp,i)=>{
+    inp.oninput=()=>{
+      const v=inp.value.replace(NAME_RE,'');
+      if(v!==inp.value)inp.value=v;
+      nameDraft[inp.dataset.key]=inp.value;
+    };
+    inp.onkeydown=ev=>{
+      if(ev.key==='Enter'){ev.preventDefault();(ins[i+1]||inp).focus()}
+    };
+  });
+}
+document.getElementById('nBack').onclick=()=>show('setup');
+document.getElementById('nGo').onclick=()=>{
+  const ins=[...nameGrid.querySelectorAll('input')];
+  ins.forEach(i=>nameDraft[i.dataset.key]=i.value);
+  players=EVENTS.map((_,e)=>teams.map((_,t)=>{
+    const a=[];
+    for(let k=0;k<MAXP;k++){const v=(nameDraft[`${e}|${t}|${k}`]||'').trim();if(v)a.push(v)}
+    return a;
+  }));
+  if(!players.some(r=>r.some(a=>a.length))){nmsg.textContent='참가자를 한 명 이상 입력해 주세요.';return}
+  startBoard();
+};
+
+/* ---------- 순위/점수 (최고점 방식 전용) ---------- */
 function calc(){
   const N=teams.length;
   const pts=EVENTS.map((_,e)=>{
-    const arr=data[e].map((d,t)=>({t,v:d.rec})).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
+    const arr=data[e].map((d,t)=>({t,v:d[0].rec})).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
     const p=teams.map(()=>0);
     arr.forEach((x,i)=>{
       const first=arr.findIndex(y=>y.v===x.v);   // 동점은 같은 점수
@@ -211,85 +311,142 @@ function fmt(ms){
   const cs=Math.floor(ms/10)%100,s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000);
   return String(m)+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
 }
+const recText=(ev,d)=>d.rec!==null?(ev.type==='count'?d.rec:fmt(d.rec)):(d.fail?'-':'');
 
 /* ---------- 점수판 그리기 ---------- */
 const board=document.getElementById('board');
 function buildBoard(){
   const n=teams.length;
   board.style.gridTemplateColumns=`170px repeat(${n},minmax(0,1fr))`;
-  board.style.gridTemplateRows=`120px repeat(4,minmax(0,1fr)) 105px`;
+  board.style.gridTemplateRows=mode==='all'?`120px repeat(4,minmax(0,1fr))`:`120px repeat(4,minmax(0,1fr)) 105px`;
   board.style.setProperty('--ptw',n>=5?'80px':'92px');
   render();
 }
-function render(){
-  const {pts,tot}=calc();
+function headHtml(){
   let h=`<div class="c corner"><span class="t">팀</span><span class="j">종목</span></div>`;
   teams.forEach(t=>h+=`<div class="c th" style="background:${t.c.bg};color:${t.c.fg}">${esc(t.name)}</div>`);
+  return h;
+}
+const evHtml=(ev,rc)=>`<div class="c ev ${rc}">${ev.name.map(x=>`<div>${x}</div>`).join('')}${ev.sub?`<small>${ev.sub}</small>`:''}</div>`;
+function recHtmlOf(ev,d,e,t,k){
+  const val=recText(ev,d);
+  return ev.type==='count'
+    ?`<div class="rec"><input inputmode="numeric" value="${val}" data-e="${e}" data-t="${t}" data-k="${k}"></div>`
+    :`<div class="rec">${val}</div>`;
+}
+function render(){
+  if(mode==='all'){renderAll();return}
+  const {pts,tot}=calc();
+  let h=headHtml();
   EVENTS.forEach((ev,e)=>{
     const rc='r'+(e%2);
-    h+=`<div class="c ev ${rc}">${ev.name.map(x=>`<div>${x}</div>`).join('')}${ev.sub?`<small>${ev.sub}</small>`:''}</div>`;
+    h+=evHtml(ev,rc);
     teams.forEach((t,ti)=>{
-      const d=data[e][ti];
+      const d=data[e][ti][0];
       const isSel=sel&&sel.e===e&&sel.t===ti;
-      let recHtml;
-      if(ev.type==='count'){
-        const val=d.rec!==null?d.rec:(d.fail?'-':'');
-        recHtml=`<div class="rec"><input inputmode="numeric" value="${val}" data-e="${e}" data-t="${ti}"></div>`;
-      }else{
-        const val=d.rec!==null?fmt(d.rec):(d.fail?'-':'');
-        recHtml=`<div class="rec">${val}</div>`;
-      }
       const pv=(d.rec!==null||d.fail)?pts[e][ti]:'';
-      h+=`<div class="c ${rc} pair cell ${isSel?'sel':''}" data-e="${e}" data-t="${ti}">${recHtml}<div class="pt">${pv}</div></div>`;
+      h+=`<div class="c ${rc} pair cell unit ${isSel?'sel':''}" data-e="${e}" data-t="${ti}" data-k="0">${recHtmlOf(ev,d,e,ti,0)}<div class="pt">${pv}</div></div>`;
     });
   });
   h+=`<div class="c tot r0">합계</div>`;
   teams.forEach((t,ti)=>h+=`<div class="c pair r0"><div class="rec"></div><div class="pt totv">${tot[ti]}</div></div>`);
   board.innerHTML=h;
+  bindInputs();
+  updateSelLabel();
+}
+function renderAll(){
+  let h=headHtml();
+  EVENTS.forEach((ev,e)=>{
+    const rc='r'+(e%2);
+    h+=evHtml(ev,rc);
+    teams.forEach((t,ti)=>{
+      const list=players[e][ti];
+      if(!list.length){h+=`<div class="c pcell empty ${rc}">참가자 없음</div>`;return}
+      h+=`<div class="c pcell ${rc}" style="grid-template-rows:repeat(${list.length},minmax(0,1fr))">`;
+      list.forEach((nm,k)=>{
+        const d=data[e][ti][k];
+        const isSel=sel&&sel.e===e&&sel.t===ti&&sel.k===k;
+        h+=`<div class="prow unit ${isSel?'sel':''}" data-e="${e}" data-t="${ti}" data-k="${k}"><div class="pname" title="${esc(nm)}">${esc(nm)}</div>${recHtmlOf(ev,d,e,ti,k)}</div>`;
+      });
+      h+='</div>';
+    });
+  });
+  board.innerHTML=h;
+  bindInputs();
+  updateSelLabel();
+  fitCells();
+}
+function bindInputs(){
   board.querySelectorAll('input').forEach(inp=>{
     inp.onkeydown=ev=>{if(ev.key==='Enter')inp.blur()};
     inp.oninput=()=>{inp.value=inp.value.replace(/[^0-9-]/g,'')};
-    inp.onchange=()=>commitCount(+inp.dataset.e,+inp.dataset.t,inp.value.trim());
+    inp.onchange=()=>commitCount(+inp.dataset.e,+inp.dataset.t,+inp.dataset.k,inp.value.trim());
   });
-  updateSelLabel();
 }
 function updateSelLabel(){
-  document.getElementById('sel').textContent=sel?`${EVENTS[sel.e].name.join('')} · ${teams[sel.t].name}`:'없음';
+  let t='없음';
+  if(sel){
+    t=`${EVENTS[sel.e].name.join('')}·${teams[sel.t].name}`;
+    if(mode==='all')t+=`·${players[sel.e][sel.t][sel.k]}`;
+  }
+  document.getElementById('sel').textContent=t;
 }
 board.addEventListener('click',ev=>{
   if(ev.target.tagName==='INPUT')return;
-  const cell=ev.target.closest('.cell');
-  if(!cell)return;
-  const e=+cell.dataset.e,t=+cell.dataset.t;
-  selectCell(e,t);
-  if(manualMode&&EVENTS[e].type==='time')openManual(cell,e,t);
+  const u=ev.target.closest('.unit');
+  if(!u)return;
+  const e=+u.dataset.e,t=+u.dataset.t,k=+u.dataset.k;
+  selectCell(e,t,k);
+  if(manualMode&&EVENTS[e].type==='time')openManual(u,e,t,k);
 });
-/* 팀 수에 맞춰 정해진 기록칸 폭에 '0:00.00'이 들어가도록 글자 크기를 한 번 계산 (기록이 들어와도 칸/글자 크기는 변하지 않음) */
-function fitFont(){
-  const rec=board.querySelector('.cell .rec');
-  if(!rec)return;
+
+/* '0:00.00' 글자 폭 측정 (100px 기준) */
+function timeW100(){
   const m=document.createElement('span');
   m.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;font-weight:800;font-size:100px;font-variant-numeric:tabular-nums;font-family:inherit';
   m.textContent='0:00.00';
   stage.appendChild(m);
-  const w100=m.getBoundingClientRect().width/ (stage.getBoundingClientRect().width/1920);
+  const w=m.getBoundingClientRect().width/(stage.getBoundingClientRect().width/1920);
   stage.removeChild(m);
+  return w;
+}
+/* 최고점 방식: 팀 수에 맞춰 정해진 기록칸 폭에 '0:00.00'이 들어가도록 글자 크기를 한 번 계산 */
+function fitFont(){
+  const rec=board.querySelector('.cell .rec');
+  if(!rec)return;
   const recW=rec.clientWidth;
-  const fs=Math.max(14,Math.min(70,Math.floor((recW-24)/w100*100)));
+  const fs=Math.max(14,Math.min(70,Math.floor((recW-24)/timeW100()*100)));
   board.style.setProperty('--recfs',fs+'px');
 }
-function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+/* 전체기록 방식: 칸(팀×종목)의 크기와 참가자 수에 맞춰 이름·기록 글자 크기를 계산 */
+function fitCells(){
+  const w100=timeW100();
+  board.querySelectorAll('.pcell:not(.empty)').forEach(c=>{
+    const n=c.children.length,H=c.clientHeight,W=c.clientWidth;
+    if(!H||!W)return;
+    const gap=3,subH=(H-(n-1)*gap)/n;
+    const recW=W*0.58-gap,nameW=W*0.42-gap;
+    const rfs=Math.floor(Math.min(subH*0.64,60,(recW-10)/w100*100));
+    let L=2;c.querySelectorAll('.pname').forEach(x=>{L=Math.max(L,x.textContent.length)});
+    const nfs=Math.floor(Math.min(subH*0.6,34,(nameW-12)/L));
+    c.style.setProperty('--rfs',Math.max(10,rfs)+'px');
+    c.style.setProperty('--nfs',Math.max(10,nfs)+'px');
+  });
+}
+function fitAll(){ if(mode==='all')fitCells(); else fitFont(); }
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
 /* ---------- 선택 / 입력 ---------- */
 function hint(t){const h=document.getElementById('swHint');h.textContent=t;clearTimeout(hint.t);if(t)hint.t=setTimeout(()=>h.textContent='',2500)}
-function selectCell(e,t){
+const same=(a,e,t,k)=>a&&a.e===e&&a.t===t&&a.k===k;
+function selectCell(e,t,k){
   if(running&&!manualMode){hint('측정 중에는 칸을 바꿀 수 없습니다.');return}
-  if(!sel||sel.e!==e||sel.t!==t)lastMeasure=null;
-  sel={e,t};
-  board.querySelectorAll('.cell').forEach(c=>c.classList.toggle('sel',+c.dataset.e===e&&+c.dataset.t===t));
+  if(!same(sel,e,t,k))lastMeasure=null;
+  sel={e,t,k};
+  board.querySelectorAll('.unit').forEach(c=>c.classList.toggle('sel',+c.dataset.e===e&&+c.dataset.t===t&&+c.dataset.k===k));
   updateSelLabel();
   if(EVENTS[e].type==='count'){
-    const inp=board.querySelector(`input[data-e="${e}"][data-t="${t}"]`);
+    const inp=board.querySelector(`input[data-e="${e}"][data-t="${t}"][data-k="${k}"]`);
     if(inp){inp.focus();inp.select()}
   }
 }
@@ -302,8 +459,8 @@ function mutate(fn){
   fn();
   if(JSON.stringify(data)!==before){undoStack.push(before);if(undoStack.length>UNDO_MAX)undoStack.shift();bUndo.disabled=false}
 }
-function commitCount(e,t,v){
-  const d=data[e][t];
+function commitCount(e,t,k,v){
+  const d=data[e][t][k];
   mutate(()=>{
     if(v===''||v==='-'){ if(v==='-'&&d.rec===null)d.fail=true; }
     else{
@@ -333,16 +490,16 @@ bToggle.onclick=()=>{
   if(!running){
     if(!sel){hint('먼저 기록칸을 선택하세요.');return}
     if(EVENTS[sel.e].type==='count'){hint('카우보이많이는 숫자를 직접 입력하세요.');return}
-    lastMeasure=null;runCell={e:sel.e,t:sel.t};
+    lastMeasure=null;runCell={e:sel.e,t:sel.t,k:sel.k};
     elapsed=0;t0=performance.now();running=true;swTime.classList.add('run');setToggle();tick();
   }else{
     cancelAnimationFrame(raf);elapsed=performance.now()-t0;running=false;
     swTime.textContent=fmt(elapsed);swTime.classList.remove('run');setToggle();
     const rc=runCell||sel;
-    const d=data[rc.e][rc.t];
-    lastMeasure={e:rc.e,t:rc.t,rec:d.rec,fail:d.fail};   // 이 측정 직전의 기록 보관
+    const d=data[rc.e][rc.t][rc.k];
+    lastMeasure={e:rc.e,t:rc.t,k:rc.k,rec:d.rec,fail:d.fail};   // 이 측정 직전의 기록 보관
     mutate(()=>{ if(d.rec===null||elapsed>d.rec){d.rec=Math.round(elapsed);d.fail=false} });
-    sel={e:rc.e,t:rc.t};
+    sel={e:rc.e,t:rc.t,k:rc.k};
     render();
   }
 };
@@ -359,8 +516,8 @@ bManual.onclick=()=>{
   hint(manualMode?'수기입력 ON: 시간 칸을 클릭해 숫자를 입력하고 Enter':'수기입력을 껐습니다.');
 };
 function fmtDigits(d){const p=d.padStart(5,'0');return (+p[0])+':'+p.slice(1,3)+'.'+p.slice(3)}
-function openManual(cell,e,t){
-  const rec=cell.querySelector('.rec');
+function openManual(unit,e,t,k){
+  const rec=unit.querySelector('.rec');
   if(!rec||rec.querySelector('input'))return;
   const orig=rec.innerHTML;
   rec.innerHTML='<input class="mi" inputmode="numeric" autocomplete="off">';
@@ -381,8 +538,8 @@ function openManual(cell,e,t){
     const ms=(m*60+sec)*1000+cs*10;
     if(ms<=0){hint('0보다 큰 시간을 입력하세요.');return}
     done=true;
-    const d=data[e][t];
-    lastMeasure={e,t,rec:d.rec,fail:d.fail};
+    const d=data[e][t][k];
+    lastMeasure={e,t,k,rec:d.rec,fail:d.fail};
     mutate(()=>{ if(d.rec===null||ms>d.rec){d.rec=ms;d.fail=false} });
     render();
   };
@@ -395,8 +552,8 @@ document.getElementById('bFail').onclick=()=>{
   const wasRunning=running;
   resetSW();
   mutate(()=>{
-    const d=data[sel.e][sel.t];
-    if(!wasRunning&&lastMeasure&&lastMeasure.e===sel.e&&lastMeasure.t===sel.t){
+    const d=data[sel.e][sel.t][sel.k];
+    if(!wasRunning&&same(lastMeasure,sel.e,sel.t,sel.k)){
       d.rec=lastMeasure.rec;d.fail=lastMeasure.fail;     // 방금 측정값 삭제 → 이전 기록 복원
     }
     if(d.rec===null)d.fail=true;                          // 이전 기록이 없으면 '-'
@@ -408,7 +565,7 @@ document.getElementById('bClear').onclick=()=>{
   if(!sel){hint('초기화할 칸을 선택하세요.');return}
   if(running)resetSW();
   lastMeasure=null;
-  mutate(()=>{data[sel.e][sel.t]={rec:null,fail:false}});
+  mutate(()=>{data[sel.e][sel.t][sel.k]=newEntry()});
   render();
 };
 bUndo.onclick=()=>{
@@ -418,7 +575,7 @@ bUndo.onclick=()=>{
   render();hint('직전 변경을 되돌렸습니다.');
 };
 document.getElementById('bHome').onclick=()=>{
-  resetSW();setManual(false);sel=null;teams=[];data=[];undoStack=[];lastMeasure=null;bUndo.disabled=true;board.innerHTML='';
+  resetSW();setManual(false);sel=null;teams=[];players=[];data=[];undoStack=[];lastMeasure=null;runCell=null;nameDraft={};bUndo.disabled=true;board.innerHTML='';
   inputs.forEach(i=>i.value='');msg.textContent='';
   show('setup');
 };
