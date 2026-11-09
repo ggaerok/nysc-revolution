@@ -50,6 +50,13 @@
   .chip{flex:none;background:#e3deff;color:#5b55b8;font-weight:800;padding:3px 18px;border-radius:999px}
   .chip2{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#fff;color:var(--ink2);padding:3px 18px;border-radius:999px;box-shadow:inset 0 0 0 2px #dcd7f7}
   #sel{color:var(--pt);font-weight:800}
+  #cfm{position:absolute;inset:0;z-index:60;background:rgba(60,64,110,.35);display:none;align-items:center;justify-content:center}
+  #cfm.on{display:flex}
+  #cfm .dlg{background:#fff;border-radius:28px;padding:48px 64px 40px;box-shadow:0 20px 60px rgba(60,64,110,.35);text-align:center;min-width:620px}
+  #cfm .dlg p{font-size:40px;font-weight:800;color:#2b3553;margin:0 0 36px}
+  #cfm .row{display:flex;gap:24px;justify-content:center}
+  #cfm button{font-family:inherit;font-size:30px;font-weight:800;border:0;border-radius:16px;padding:16px 56px;cursor:pointer}
+  #cfmOk{background:#ffb3c1;color:#7a1f3a}#cfmNo{background:#e1e6fb;color:#2b3553}
   #fx{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;z-index:50}
   #ttl #swHint{font-size:22px;color:#c8641c;height:28px;margin-top:4px;font-weight:700}
   #sw{position:absolute;right:0;top:0;width:1120px;height:165px;background:#fff;border-radius:26px;padding:16px 20px;display:flex;align-items:stretch;gap:16px;box-shadow:inset 0 0 0 3px #e0dcf8,0 10px 26px rgba(110,100,200,.2)}
@@ -131,6 +138,7 @@
 </head>
 <body>
 <div id="stage">
+<div id="cfm"><div class="dlg" role="dialog" aria-modal="true"><p>정말로 초기화 하시겠습니까?</p><div class="row"><button id="cfmOk">확인</button><button id="cfmNo">취소</button></div></div></div>
 <canvas id="fx" width="1920" height="1080"></canvas>
 
   <!-- 배경: 파스텔 우주 -->
@@ -725,7 +733,14 @@ bUndo.onclick=()=>{
   data=JSON.parse(undoStack.pop());lastMeasure=null;bUndo.disabled=!undoStack.length;
   render();hint('직전 변경을 되돌렸습니다.');
 };
-document.getElementById('bHome').onclick=()=>{
+const cfm=document.getElementById('cfm');
+const closeCfm=()=>cfm.classList.remove('on');
+document.getElementById('bHome').onclick=()=>cfm.classList.add('on');
+document.getElementById('cfmNo').onclick=closeCfm;
+cfm.onclick=ev=>{if(ev.target===cfm)closeCfm()};
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&cfm.classList.contains('on'))closeCfm()});
+document.getElementById('cfmOk').onclick=()=>{
+  closeCfm();
   resetSW();setManual(false);sel=null;teams=[];players=[];data=[];undoStack=[];lastMeasure=null;runCell=null;nameDraft={};bUndo.disabled=true;board.innerHTML='';
   inputs.forEach(i=>i.value='');msg.textContent='';
   show('setup');
