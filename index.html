@@ -28,13 +28,13 @@
   .team-in input{flex:1 1 0;width:0;min-width:0;background:transparent;border:0;outline:0;color:var(--ink);font-size:34px;font-family:inherit;padding:10px 4px;user-select:text}
   .team-in input::placeholder{color:#b3b9d6}
   .team-in:focus-within{box-shadow:inset 0 0 0 3px #8c7be8,0 0 0 5px rgba(140,123,232,.25)}
-  .modes{display:flex;gap:26px}
+  .modes{display:flex;gap:22px}
   .mode{flex:1;display:block;cursor:pointer}
   .mode input{display:none}
-  .mode .box{border:4px solid #d9ddf3;border-radius:22px;padding:22px 26px;background:#fff;height:170px;transition:background .15s,border-color .15s}
+  .mode .box{border:4px solid #d9ddf3;border-radius:22px;padding:22px 22px;background:#fff;height:170px;transition:background .15s,border-color .15s}
   .mode:hover .box{border-color:#bfb6f2}
-  .mode .box b{display:block;font-size:36px;margin-bottom:8px;color:var(--ink)}
-  .mode .box span{font-size:22px;color:#6d7aa0;line-height:1.4}
+  .mode .box b{display:block;font-size:31px;line-height:1.2;margin-bottom:8px;color:var(--ink);white-space:nowrap}
+  .mode .box span{font-size:21px;color:#6d7aa0;line-height:1.4}
   .mode input:checked + .box{border-color:#8c7be8;background:#f3efff;box-shadow:0 8px 18px rgba(140,123,232,.25)}
   #msg{height:36px;margin-top:20px;text-align:center;font-size:26px;color:#e0605f;font-weight:700}
   #goBtn{display:block;margin:6px auto 0;width:520px;height:100px;border:0;border-radius:24px;background:linear-gradient(135deg,#a9dcff,#c6b6ff);color:var(--ink);font-size:46px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 6px 0 rgba(120,110,200,.3),0 12px 22px rgba(120,110,200,.2)}
@@ -241,6 +241,8 @@
           <div class="box"><b>최고점 선택방식</b><span>시도할 때마다 기록을 비교해<br>가장 좋은 기록만 남깁니다.</span></div></label>
         <label class="mode"><input type="radio" name="mode" value="all">
           <div class="box"><b>전체기록 표시 방식</b><span>참가자별 이름과 기록을 모두<br>표에 표시합니다. (점수 계산 없음)</span></div></label>
+        <label class="mode"><input type="radio" name="mode" value="rank">
+          <div class="box"><b>전체기록 표시 및<br>팀 순위 기록</b><span>(준비 중)</span></div></label>
       </div>
       <div id="msg"></div>
       <button id="goBtn">기록하기</button>
@@ -340,6 +342,7 @@ document.getElementById('goBtn').onclick=()=>{
   msg.textContent='';
   teams=names.map((n,i)=>({name:n,c:COLORS[i]}));
   mode=document.querySelector('input[name=mode]:checked').value;
+  if(mode==='rank'){msg.textContent="'전체기록 표시 및 팀 순위 기록' 방식은 아직 준비 중입니다. 다른 방식을 선택해 주세요.";return}
   if(mode==='all'){buildNames();show('namesScreen');return}
   startBoard();
 };
