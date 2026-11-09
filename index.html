@@ -686,13 +686,14 @@ function openManual(unit,e,t,k){
   inp.onblur=close;
 }
 document.getElementById('bReset').onclick=()=>resetSW();
-/* 실패: 측정 중이면 폐기 / 방금 정지로 기록된 값이 있으면 그 기록을 지우고 이전 기록으로 복원 */
+/* 실패: 최고점 방식 - 측정 중이면 폐기, 방금 정지로 기록된 값이 있으면 지우고 이전 기록으로 복원 / 전체기록(+순위) 방식 - 칸 기록을 바로 지우고 '-' 표시 */
 document.getElementById('bFail').onclick=()=>{
   if(!sel){hint('먼저 기록칸을 선택하세요.');return}
   const wasRunning=running;
   resetSW();
   mutate(()=>{
     const d=data[sel.e][sel.t][sel.k];
+    if(mode!=='best'){d.rec=null;d.fail=true;return}      // 전체기록(+순위) 방식: 이전 기록을 기억하지 않고 바로 삭제 → '-'
     if(!wasRunning&&same(lastMeasure,sel.e,sel.t,sel.k)){
       d.rec=lastMeasure.rec;d.fail=lastMeasure.fail;     // 방금 측정값 삭제 → 이전 기록 복원
     }
