@@ -31,11 +31,11 @@
   .modes{display:flex;gap:22px}
   .mode{flex:1;display:block;cursor:pointer}
   .mode input{display:none}
-  .mode .box{border:4px solid #d9ddf3;border-radius:22px;padding:22px 22px;background:#fff;height:170px;transition:background .15s,border-color .15s}
+  .mode .box{border:4px solid #d9ddf3;border-radius:22px;padding:24px 20px 16px;background:#fff;height:228px;transition:background .15s,border-color .15s;box-shadow:inset 0 10px 0 var(--mc);overflow:hidden}
   .mode:hover .box{border-color:#bfb6f2}
-  .mode .box b{display:block;font-size:31px;line-height:1.2;margin-bottom:8px;color:var(--ink);white-space:nowrap}
-  .mode .box span{font-size:21px;color:#6d7aa0;line-height:1.4}
-  .mode input:checked + .box{border-color:#8c7be8;background:#f3efff;box-shadow:0 8px 18px rgba(140,123,232,.25)}
+  .mode .box b{display:block;font-size:32px;line-height:1.2;margin-bottom:10px;color:var(--ink);white-space:nowrap;letter-spacing:-.5px}
+  .mode .box span{display:block;font-size:20px;color:#4a5878;font-weight:600;line-height:1.5;white-space:nowrap;letter-spacing:-.3px}
+  .mode input:checked + .box{border-color:#8c7be8;background:#f6f3ff;box-shadow:inset 0 10px 0 var(--mc),0 8px 18px rgba(140,123,232,.25)}
   #msg{height:36px;margin-top:20px;text-align:center;font-size:26px;color:#e0605f;font-weight:700}
   #goBtn{display:block;margin:6px auto 0;width:520px;height:100px;border:0;border-radius:24px;background:linear-gradient(135deg,#a9dcff,#c6b6ff);color:var(--ink);font-size:46px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 6px 0 rgba(120,110,200,.3),0 12px 22px rgba(120,110,200,.2)}
   #goBtn:hover{filter:brightness(1.05)}
@@ -238,12 +238,12 @@
 
       <div class="sec-title">② 진행방법 선택</div>
       <div class="modes">
-        <label class="mode"><input type="radio" name="mode" value="best" checked>
-          <div class="box"><b>최고점 선택방식</b><span>시도할 때마다 기록을 비교해<br>가장 좋은 기록만 남깁니다.</span></div></label>
-        <label class="mode"><input type="radio" name="mode" value="all">
-          <div class="box"><b>전체기록 표시 방식</b><span>참가자별 이름과 기록을 모두<br>표에 표시합니다. (점수 계산 없음)</span></div></label>
-        <label class="mode"><input type="radio" name="mode" value="rank">
-          <div class="box"><b>전체기록 표시 및<br>팀 순위 기록</b><span>참가자별 기록을 모두 표시하고<br>팀 순위 점수와 합계를 기록합니다.</span></div></label>
+        <label class="mode" style="--mc:#b5ead7"><input type="radio" name="mode" value="best" checked>
+          <div class="box"><b>최고점<br>선택방식</b><span>시도할 때마다 기록을 비교해<br>가장 좋은 기록만 남기고<br>순위 점수를 계산합니다.</span></div></label>
+        <label class="mode" style="--mc:#bfe0ff"><input type="radio" name="mode" value="all">
+          <div class="box"><b>전체기록<br>표시 방식</b><span>참가자별 이름과 기록을<br>모두 표에 표시합니다.<br>(점수 계산 없음)</span></div></label>
+        <label class="mode" style="--mc:#d9ccff"><input type="radio" name="mode" value="rank">
+          <div class="box"><b>전체기록 표시 및<br>팀 순위 기록</b><span>참가자별 기록을 표시하고<br>팀 순위 점수와 합계를<br>기록합니다.</span></div></label>
       </div>
       <div id="msg"></div>
       <button id="goBtn">기록하기</button>
