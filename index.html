@@ -496,6 +496,9 @@ function renderAll(){
 }
 function bindInputs(){
   board.querySelectorAll('input').forEach(inp=>{
+    // 칸을 누르면 기존 숫자를 모두 선택해서 바로 새 숫자로 덮어쓸 수 있게 함 (선택 칸도 함께 표시)
+    inp.onfocus=()=>{const e=+inp.dataset.e,t=+inp.dataset.t,k=+inp.dataset.k;if(!same(sel,e,t,k))selectCell(e,t,k);inp.select()};
+    inp.onmouseup=ev=>ev.preventDefault();
     inp.onkeydown=ev=>{if(ev.key==='Enter')inp.blur()};
     inp.oninput=()=>{inp.value=inp.value.replace(/[^0-9-]/g,'')};
     inp.onchange=()=>commitCount(+inp.dataset.e,+inp.dataset.t,+inp.dataset.k,inp.value.trim());
@@ -577,13 +580,15 @@ function mutate(fn){
   fn();
   if(JSON.stringify(data)!==before){undoStack.push(before);if(undoStack.length>UNDO_MAX)undoStack.shift();bUndo.disabled=false}
 }
+/* 기록 갱신 규칙: 최고점 방식은 더 큰 값만 반영, 전체기록 방식은 칸당 1회 측정이므로 항상 새 기록으로 덮어씀 */
+const accepts=(d,v)=>mode==='all'||d.rec===null||v>d.rec;
 function commitCount(e,t,k,v){
   const d=data[e][t][k];
   mutate(()=>{
     if(v===''||v==='-'){ if(v==='-'&&d.rec===null)d.fail=true; }
     else{
       const n=parseInt(v,10);
-      if(!isNaN(n)&&(d.rec===null||n>d.rec)){d.rec=n;d.fail=false}
+      if(!isNaN(n)&&accepts(d,n)){d.rec=n;d.fail=false}
     }
   });
   render();
@@ -616,7 +621,7 @@ bToggle.onclick=()=>{
     const rc=runCell||sel;
     const d=data[rc.e][rc.t][rc.k];
     lastMeasure={e:rc.e,t:rc.t,k:rc.k,rec:d.rec,fail:d.fail};   // 이 측정 직전의 기록 보관
-    mutate(()=>{ if(d.rec===null||elapsed>d.rec){d.rec=Math.round(elapsed);d.fail=false} });
+    mutate(()=>{ if(accepts(d,elapsed)){d.rec=Math.round(elapsed);d.fail=false} });
     sel={e:rc.e,t:rc.t,k:rc.k};
     render();
   }
@@ -658,7 +663,7 @@ function openManual(unit,e,t,k){
     done=true;
     const d=data[e][t][k];
     lastMeasure={e,t,k,rec:d.rec,fail:d.fail};
-    mutate(()=>{ if(d.rec===null||ms>d.rec){d.rec=ms;d.fail=false} });
+    mutate(()=>{ if(accepts(d,ms)){d.rec=ms;d.fail=false} });
     render();
   };
   inp.onblur=close;
