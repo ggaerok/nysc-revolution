@@ -94,6 +94,7 @@
   .rec.best{color:#0b5fb0}
   .rec input{width:100%;height:100%;border:0;background:transparent;text-align:center;font-size:var(--recfs,70px);font-weight:800;font-family:inherit;color:var(--ink);outline:0;user-select:text}
   /* 전체기록 방식: 팀×종목 칸을 참가자 수만큼 나눔 */
+  .rwrap{display:grid;grid-template-columns:minmax(0,1fr) var(--ptw,92px);grid-template-rows:minmax(0,1fr);gap:6px;background:var(--line);min-width:0;min-height:0}
   .pcell{display:grid;gap:3px;background:var(--line);min-height:0;min-width:0;align-items:stretch;justify-content:stretch;--selw:4px}
   .pcell.empty{display:flex;align-items:center;justify-content:center;color:#8a96b8;font-size:22px;font-weight:700;background:var(--r0)}
   .pcell.r1.empty{background:var(--r1)}
@@ -242,7 +243,7 @@
         <label class="mode"><input type="radio" name="mode" value="all">
           <div class="box"><b>전체기록 표시 방식</b><span>참가자별 이름과 기록을 모두<br>표에 표시합니다. (점수 계산 없음)</span></div></label>
         <label class="mode"><input type="radio" name="mode" value="rank">
-          <div class="box"><b>전체기록 표시 및<br>팀 순위 기록</b><span>(준비 중)</span></div></label>
+          <div class="box"><b>전체기록 표시 및<br>팀 순위 기록</b><span>참가자별 기록을 모두 표시하고<br>팀 순위 점수와 합계를 기록합니다.</span></div></label>
       </div>
       <div id="msg"></div>
       <button id="goBtn">기록하기</button>
@@ -342,17 +343,16 @@ document.getElementById('goBtn').onclick=()=>{
   msg.textContent='';
   teams=names.map((n,i)=>({name:n,c:COLORS[i]}));
   mode=document.querySelector('input[name=mode]:checked').value;
-  if(mode==='rank'){msg.textContent="'전체기록 표시 및 팀 순위 기록' 방식은 아직 준비 중입니다. 다른 방식을 선택해 주세요.";return}
-  if(mode==='all'){buildNames();show('namesScreen');return}
+  if(mode!=='best'){buildNames();show('namesScreen');return}   // 전체기록 / 전체기록+순위: 참가자 이름 입력으로
   startBoard();
 };
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id))}
 
 function startBoard(){
-  data=EVENTS.map((_,e)=>teams.map((_,t)=>mode==='all'?players[e][t].map(newEntry):[newEntry()]));
+  data=EVENTS.map((_,e)=>teams.map((_,t)=>mode!=='best'?players[e][t].map(newEntry):[newEntry()]));
   sel=null;undoStack=[];lastMeasure=null;runCell=null;bUndo.disabled=true;
   resetSW();setManual(false);
-  document.getElementById('modeTxt').textContent=mode==='all'?'전체기록 방식':'최고점 방식';
+  document.getElementById('modeTxt').textContent=mode==='all'?'전체기록 방식':mode==='rank'?'전체기록+순위':'최고점 방식';
   buildBoard();
   show('boardScreen');
   fitAll();
@@ -405,11 +405,12 @@ document.getElementById('nGo').onclick=()=>{
   startBoard();
 };
 
-/* ---------- 순위/점수 (최고점 방식 전용) ---------- */
+/* ---------- 순위/점수 (최고점·전체기록+순위 방식: 팀의 최고 기록으로 순위 → 점수) ---------- */
+const teamBest=(e,t)=>{const v=data[e][t].filter(d=>d.rec!==null).map(d=>d.rec);return v.length?Math.max(...v):null};
 function calc(){
   const N=teams.length;
   const pts=EVENTS.map((_,e)=>{
-    const arr=data[e].map((d,t)=>({t,v:d[0].rec})).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
+    const arr=data[e].map((d,t)=>({t,v:teamBest(e,t)})).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
     const p=teams.map(()=>0);
     const distinct=[...new Set(arr.map(x=>x.v))];   // 큰 값부터 중복 제거
     arr.forEach(x=>{
@@ -448,7 +449,7 @@ function recHtmlOf(ev,d,e,t,k){
     :`<div class="rec">${val}</div>`;
 }
 function render(){
-  if(mode==='all'){renderAll();return}
+  if(mode!=='best'){renderAll();return}
   const {pts,tot}=calc();
   let h=headHtml();
   EVENTS.forEach((ev,e)=>{
@@ -468,6 +469,8 @@ function render(){
   updateSelLabel();
 }
 function renderAll(){
+  const rank=mode==='rank';
+  const sc=rank?calc():null;
   let h=headHtml();
   EVENTS.forEach((ev,e)=>{
     const rc='r'+(e%2);
@@ -481,17 +484,28 @@ function renderAll(){
     }
     teams.forEach((t,ti)=>{
       const list=players[e][ti];
-      if(!list.length){h+=`<div class="c pcell empty ${rc}">참가자 없음</div>`;return}
-      h+=`<div class="c pcell ${rc}" style="grid-template-rows:repeat(${list.length},minmax(0,1fr))">`;
-      list.forEach((nm,k)=>{
-        const d=data[e][ti][k];
-        const isSel=sel&&sel.e===e&&sel.t===ti&&sel.k===k;
-        const isTop=top!==null&&d.rec===top;
-        h+=`<div class="prow unit ${isSel?'sel':''} ${isTop?'top':''}" data-e="${e}" data-t="${ti}" data-k="${k}"><div class="pname" title="${esc(nm)}">${esc(nm)}</div>${recHtmlOf(ev,d,e,ti,k)}</div>`;
-      });
-      h+='</div>';
+      let inner;
+      if(!list.length){inner=`<div class="c pcell empty ${rc}">참가자 없음</div>`}
+      else{
+        inner=`<div class="c pcell ${rc}" style="grid-template-rows:repeat(${list.length},minmax(0,1fr))">`;
+        list.forEach((nm,k)=>{
+          const d=data[e][ti][k];
+          const isSel=sel&&sel.e===e&&sel.t===ti&&sel.k===k;
+          const isTop=top!==null&&d.rec===top;
+          inner+=`<div class="prow unit ${isSel?'sel':''} ${isTop?'top':''}" data-e="${e}" data-t="${ti}" data-k="${k}"><div class="pname" title="${esc(nm)}">${esc(nm)}</div>${recHtmlOf(ev,d,e,ti,k)}</div>`;
+        });
+        inner+='</div>';
+      }
+      if(rank){
+        const has=data[e][ti].some(d=>d.rec!==null||d.fail);
+        h+=`<div class="rwrap ${rc}">${inner}<div class="pt">${has?sc.pts[e][ti]:''}</div></div>`;
+      }else h+=inner;
     });
   });
+  if(rank){
+    h+=`<div class="c tot r0">합계</div>`;
+    teams.forEach((t,ti)=>h+=`<div class="c pair r0"><div class="rec"></div><div class="pt totv">${sc.tot[ti]}</div></div>`);
+  }
   board.innerHTML=h;
   bindInputs();
   updateSelLabel();
@@ -511,7 +525,7 @@ function updateSelLabel(){
   let t='없음';
   if(sel){
     t=`${EVENTS[sel.e].name.join('')}·${teams[sel.t].name}`;
-    if(mode==='all')t+=`·${players[sel.e][sel.t][sel.k]}`;
+    if(mode!=='best')t+=`·${players[sel.e][sel.t][sel.k]}`;
   }
   document.getElementById('sel').textContent=t;
 }
@@ -557,7 +571,7 @@ function fitCells(){
     c.style.setProperty('--nfs',Math.max(10,nfs)+'px');
   });
 }
-function fitAll(){ if(mode==='all')fitCells(); else fitFont(); }
+function fitAll(){ if(mode!=='best')fitCells(); else fitFont(); }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
 /* ---------- 선택 / 입력 ---------- */
@@ -583,8 +597,8 @@ function mutate(fn){
   fn();
   if(JSON.stringify(data)!==before){undoStack.push(before);if(undoStack.length>UNDO_MAX)undoStack.shift();bUndo.disabled=false}
 }
-/* 기록 갱신 규칙: 최고점 방식은 더 큰 값만 반영, 전체기록 방식은 칸당 1회 측정이므로 항상 새 기록으로 덮어씀 */
-const accepts=(d,v)=>mode==='all'||d.rec===null||v>d.rec;
+/* 기록 갱신 규칙: 최고점 방식은 더 큰 값만 반영, 전체기록(+순위) 방식은 칸당 1회 측정이므로 항상 새 기록으로 덮어씀 */
+const accepts=(d,v)=>mode!=='best'||d.rec===null||v>d.rec;
 function commitCount(e,t,k,v){
   const d=data[e][t][k];
   mutate(()=>{
