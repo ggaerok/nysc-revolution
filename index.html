@@ -437,7 +437,7 @@ function fmt(ms){
   const cs=Math.floor(ms/10)%100,s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000);
   return String(m)+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
 }
-const recText=(ev,d)=>d.mask?'':d.rec!==null?(ev.type==='count'?d.rec:fmt(d.rec)):(d.fail?'-':'');
+const recText=(ev,d)=>d.rec!==null?(ev.type==='count'?d.rec:fmt(d.rec)):(d.fail?'-':'');
 
 /* ---------- 점수판 그리기 ---------- */
 const board=document.getElementById('board');
@@ -460,11 +460,8 @@ function recHtmlOf(ev,d,e,t,k){
     ?`<div class="rec"><input inputmode="numeric" value="${val}" data-e="${e}" data-t="${t}" data-k="${k}"></div>`
     :`<div class="rec">${val}</div>`;
 }
-/* 기록 가리기: 가려진(hid) 기록은 보이기 전까지 표에 입력되지 않은 것처럼(빈 칸) 보이고 점수·강조 계산에서도 빼는 보기용 데이터로 그린다 */
-function maskView(src){return src.map(ev=>ev.map(t=>t.map(d=>d.hid?{rec:null,fail:false,mask:true}:d)))}
 function render(){
-  const real=data;data=maskView(real);
-  try{renderInner()}finally{data=real}
+  renderInner();
 }
 function renderInner(){
   if(mode!=='best'){renderAll();return}
@@ -616,7 +613,9 @@ function mutate(fn){
   if(JSON.stringify(data)!==before){undoStack.push(before);if(undoStack.length>UNDO_MAX)undoStack.shift();bUndo.disabled=false}
 }
 /* 기록 갱신 규칙: 최고점 방식은 더 큰 값만 반영, 전체기록(+순위) 방식은 칸당 1회 측정이므로 항상 새 기록으로 덮어씀 */
-const accepts=(d,v)=>mode!=='best'||d.rec===null||v>d.rec;
+/* 기록 가리기 중 측정값은 pend(보류)에 두고 표에는 기존 기록을 그대로 보여 준다. '기록 보이기'를 누르면 pend가 기록으로 반영된다. */
+const accepts=(d,v)=>{const base=(d.pend!=null)?d.pend:d.rec;return mode!=='best'||base===null||v>base};
+function putRec(d,ms){ if(hideMode){d.pend=ms}else{d.rec=ms;d.fail=false;d.pend=null} }
 function commitCount(e,t,k,v){
   const d=data[e][t][k];
   mutate(()=>{
@@ -664,8 +663,8 @@ bToggle.onclick=()=>{
     if(measureOnly){measureOnly=false;runCell=null;return}   // 측정만 하고 기록칸은 건드리지 않음
     const rc=runCell||sel;
     const d=data[rc.e][rc.t][rc.k];
-    lastMeasure={e:rc.e,t:rc.t,k:rc.k,rec:d.rec,fail:d.fail,hid:d.hid};   // 이 측정 직전의 기록 보관
-    mutate(()=>{ if(accepts(d,elapsed)){d.rec=Math.round(elapsed);d.fail=false;d.hid=hideMode} });
+    lastMeasure={e:rc.e,t:rc.t,k:rc.k,rec:d.rec,fail:d.fail};   // 이 측정 직전의 기록 보관
+    mutate(()=>{ if(accepts(d,elapsed))putRec(d,Math.round(elapsed)) });
     sel={e:rc.e,t:rc.t,k:rc.k};
     render();
   }
@@ -706,19 +705,22 @@ function openManual(unit,e,t,k){
     if(ms<=0){hint('0보다 큰 시간을 입력하세요.');return}
     done=true;
     const d=data[e][t][k];
-    lastMeasure={e,t,k,rec:d.rec,fail:d.fail,hid:d.hid};
-    mutate(()=>{ if(accepts(d,ms)){d.rec=ms;d.fail=false;d.hid=hideMode} });
+    lastMeasure={e,t,k,rec:d.rec,fail:d.fail};
+    mutate(()=>{ if(accepts(d,ms))putRec(d,ms) });
     render();
   };
   inp.onblur=close;
 }
-function unhideIfOff(){if(!hideMode)data.forEach(ev=>ev.forEach(t=>t.forEach(d=>{if(d.hid)d.hid=false})))}
+function applyPending(){data.forEach(ev=>ev.forEach(t=>t.forEach(d=>{if(d.pend!=null){d.rec=d.pend;d.fail=false}d.pend=null})))}
+function unhideIfOff(){if(!hideMode)data.forEach(ev=>ev.forEach(t=>t.forEach(d=>{d.pend=null})))}
 const bHide=document.getElementById('bHide');
 function setHideBtn(){bHide.innerHTML=hideMode?'기록<br>보이기':'기록<br>가리기';bHide.classList.toggle('on',hideMode)}
 bHide.onclick=()=>{
   if(!hideMode){hideMode=true;setHideBtn();showTime();hint('기록 가리기 ON: 스톱워치 숫자를 가립니다. 기록은 보이기를 누르면 표에 반영됩니다.');return}
   if(running){hint('측정이 끝난 뒤에 기록 보이기를 눌러주세요.');return}
-  hideMode=false;setHideBtn();showTime();unhideIfOff();render();hint('기록을 표시했습니다.');
+  hideMode=false;setHideBtn();showTime();
+  mutate(applyPending);        // 가려 둔 기록을 이 순간 표와 점수에 반영 (되돌리기 가능)
+  render();hint('기록을 표시했습니다.');
 };
 document.getElementById('bReset').onclick=()=>resetSW();
 /* 실패: 최고점 방식 - 측정 중이면 폐기, 방금 정지로 기록된 값이 있으면 지우고 이전 기록으로 복원 / 전체기록(+순위) 방식 - 칸 기록을 바로 지우고 '-' 표시 */
@@ -729,9 +731,9 @@ document.getElementById('bFail').onclick=()=>{
   resetSW();
   mutate(()=>{
     const d=data[sel.e][sel.t][sel.k];
-    if(mode!=='best'){d.rec=null;d.fail=true;d.hid=false;return}      // 전체기록(+순위) 방식: 이전 기록을 기억하지 않고 바로 삭제 → '-'
+    if(mode!=='best'){d.rec=null;d.fail=true;d.pend=null;return}      // 전체기록(+순위) 방식: 이전 기록을 기억하지 않고 바로 삭제 → '-'
     if(!wasRunning&&same(lastMeasure,sel.e,sel.t,sel.k)){
-      d.rec=lastMeasure.rec;d.fail=lastMeasure.fail;d.hid=lastMeasure.hid;     // 방금 측정값 삭제 → 이전 기록 복원
+      d.rec=lastMeasure.rec;d.fail=lastMeasure.fail;d.pend=null;     // 방금 측정값 삭제 → 이전 기록 복원
     }
     if(d.rec===null)d.fail=true;                          // 이전 기록이 없으면 '-'
   });
