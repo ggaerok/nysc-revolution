@@ -59,15 +59,19 @@
   #cfmOk{background:#ffb3c1;color:#7a1f3a}#cfmNo{background:#e1e6fb;color:#2b3553}
   #fx{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;z-index:50}
   #ttl #swHint{font-size:22px;color:#c8641c;height:28px;margin-top:4px;font-weight:700}
-  #sw{position:absolute;right:0;top:0;width:1120px;height:165px;background:#fff;border-radius:26px;padding:16px 20px;display:flex;align-items:stretch;gap:16px;box-shadow:inset 0 0 0 3px #e0dcf8,0 10px 26px rgba(110,100,200,.2)}
-  #swTime{width:360px;background:linear-gradient(180deg,#f6f3ff,#e6f2ff);border-radius:18px;font-size:88px;font-weight:800;text-align:center;line-height:133px;font-variant-numeric:tabular-nums;letter-spacing:1px;color:#5a5fd0;flex:none;box-shadow:inset 0 0 0 3px #d3d6f7}
+  #sw{position:absolute;right:0;top:0;width:1180px;height:165px;background:#fff;border-radius:26px;padding:16px 20px;display:flex;align-items:stretch;gap:16px;box-shadow:inset 0 0 0 3px #e0dcf8,0 10px 26px rgba(110,100,200,.2)}
+  #swTime{width:340px;background:linear-gradient(180deg,#f6f3ff,#e6f2ff);border-radius:18px;font-size:88px;font-weight:800;text-align:center;line-height:133px;font-variant-numeric:tabular-nums;letter-spacing:1px;color:#5a5fd0;flex:none;box-shadow:inset 0 0 0 3px #d3d6f7}
   #swTime.run{color:#ef6c3e}
   #bigBtns{display:flex;gap:10px;flex:none}
   .btn{border:0;border-radius:16px;font-weight:800;cursor:pointer;font-family:inherit;color:var(--ink);box-shadow:0 4px 0 rgba(75,90,140,.2),0 7px 12px rgba(75,90,140,.1);transition:filter .15s}
   .btn:hover:not(:disabled){filter:brightness(1.04)}
   .btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 rgba(75,90,140,.2)}
-  .btn.big{width:185px;font-size:44px}
-  #smallBtns{display:flex;flex-direction:column;gap:7px;width:128px;flex:none}
+  .btn.big{width:148px;font-size:40px}
+  #bHide{font-size:32px;line-height:1.15;background:#d9d2fb;color:#46318f;padding:0 6px}
+  #bHide.on{background:#b9a8f5;color:#2a1a66;box-shadow:inset 0 0 0 4px #7a63d9,0 4px 0 rgba(75,90,140,.2)}
+  #swTime.masked{color:#9aa0d8;letter-spacing:0;font-size:80px}
+  .rec.mask{color:#9aa0d8}
+  #smallBtns{display:flex;flex-direction:column;gap:7px;width:116px;flex:none}
   .btn.sm{flex:1;font-size:21px;border-radius:12px}
   #rightBtns{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
   #rightBtns .btn{flex:1;font-size:24px}
@@ -289,6 +293,7 @@
         <div id="bigBtns">
           <button class="btn big" id="bToggle">시작</button>
           <button class="btn big" id="bFail">실패</button>
+          <button class="btn big" id="bHide">기록<br>가리기</button>
         </div>
         <div id="smallBtns">
           <button class="btn sm" id="bReset">리셋</button>
@@ -432,7 +437,7 @@ function fmt(ms){
   const cs=Math.floor(ms/10)%100,s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000);
   return String(m)+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
 }
-const recText=(ev,d)=>d.rec!==null?(ev.type==='count'?d.rec:fmt(d.rec)):(d.fail?'-':'');
+const recText=(ev,d)=>d.mask?'?':d.rec!==null?(ev.type==='count'?d.rec:fmt(d.rec)):(d.fail?'-':'');
 
 /* ---------- 점수판 그리기 ---------- */
 const board=document.getElementById('board');
@@ -455,7 +460,13 @@ function recHtmlOf(ev,d,e,t,k){
     ?`<div class="rec"><input inputmode="numeric" value="${val}" data-e="${e}" data-t="${t}" data-k="${k}"></div>`
     :`<div class="rec">${val}</div>`;
 }
+/* 기록 가리기: 가려진(hid) 기록은 표·점수·강조 계산에서 '?'로만 보이게 하는 보기용 데이터로 그린다 */
+function maskView(src){return src.map(ev=>ev.map(t=>t.map(d=>d.hid?{rec:null,fail:false,mask:true}:d)))}
 function render(){
+  const real=data;data=maskView(real);
+  try{renderInner()}finally{data=real}
+}
+function renderInner(){
   if(mode!=='best'){renderAll();return}
   const {pts,tot}=calc();
   let h=headHtml();
@@ -622,19 +633,21 @@ function commitCount(e,t,k,v){
 let running=false,t0=0,elapsed=0,raf=0;
 const swTime=document.getElementById('swTime');
 const MAX_MS=10*60*1000,SUCCESS_MS=10000;
+let hideMode=false;   // 기록 가리기 ON: 스톱워치 숫자와 새로 측정된 시간 기록을 '기록 보이기'를 누를 때까지 숨김
+function showTime(){swTime.textContent=hideMode?'?:??.??':fmt(elapsed);swTime.classList.toggle('masked',hideMode)}
 let measureOnly=false;   // true: 숫자 입력 종목(카우보이많이)에서 시간만 측정, 칸에는 기록하지 않음
 function tick(){
   elapsed=performance.now()-t0;
   if(measureOnly&&elapsed>=SUCCESS_MS){      // 카우보이많이 측정: 10초가 되면 성공 → 정지 + 폭죽 (칸에는 기록하지 않음)
-    cancelAnimationFrame(raf);elapsed=SUCCESS_MS;running=false;swTime.textContent=fmt(elapsed);swTime.classList.remove('run');setToggle();
+    cancelAnimationFrame(raf);elapsed=SUCCESS_MS;running=false;showTime();swTime.classList.remove('run');setToggle();
     measureOnly=false;runCell=null;hint('10초 성공!');fireworks();return;
   }
   if(elapsed>=MAX_MS){            // 10분 초과: 0:00.00으로 돌아가며 정지 (기록하지 않음)
     resetSW();hint('10분을 넘어 스톱워치가 멈췄습니다. 기록되지 않았습니다.');return;
   }
-  swTime.textContent=fmt(elapsed);raf=requestAnimationFrame(tick);
+  showTime();raf=requestAnimationFrame(tick);
 }
-function resetSW(){cancelAnimationFrame(raf);running=false;measureOnly=false;elapsed=0;swTime.textContent='0:00.00';swTime.classList.remove('run');if(typeof setToggle==='function')setToggle()}
+function resetSW(){cancelAnimationFrame(raf);running=false;measureOnly=false;elapsed=0;showTime();swTime.classList.remove('run');if(typeof setToggle==='function')setToggle()}
 
 const bToggle=document.getElementById('bToggle');
 function setToggle(){bToggle.textContent=running?'정지':'시작';bToggle.classList.toggle('run',running)}
@@ -647,12 +660,12 @@ bToggle.onclick=()=>{
     elapsed=0;t0=performance.now();running=true;swTime.classList.add('run');setToggle();tick();
   }else{
     cancelAnimationFrame(raf);elapsed=performance.now()-t0;running=false;
-    swTime.textContent=fmt(elapsed);swTime.classList.remove('run');setToggle();
+    showTime();swTime.classList.remove('run');setToggle();
     if(measureOnly){measureOnly=false;runCell=null;return}   // 측정만 하고 기록칸은 건드리지 않음
     const rc=runCell||sel;
     const d=data[rc.e][rc.t][rc.k];
-    lastMeasure={e:rc.e,t:rc.t,k:rc.k,rec:d.rec,fail:d.fail};   // 이 측정 직전의 기록 보관
-    mutate(()=>{ if(accepts(d,elapsed)){d.rec=Math.round(elapsed);d.fail=false} });
+    lastMeasure={e:rc.e,t:rc.t,k:rc.k,rec:d.rec,fail:d.fail,hid:d.hid};   // 이 측정 직전의 기록 보관
+    mutate(()=>{ if(accepts(d,elapsed)){d.rec=Math.round(elapsed);d.fail=false;d.hid=hideMode} });
     sel={e:rc.e,t:rc.t,k:rc.k};
     render();
   }
@@ -693,12 +706,20 @@ function openManual(unit,e,t,k){
     if(ms<=0){hint('0보다 큰 시간을 입력하세요.');return}
     done=true;
     const d=data[e][t][k];
-    lastMeasure={e,t,k,rec:d.rec,fail:d.fail};
-    mutate(()=>{ if(accepts(d,ms)){d.rec=ms;d.fail=false} });
+    lastMeasure={e,t,k,rec:d.rec,fail:d.fail,hid:d.hid};
+    mutate(()=>{ if(accepts(d,ms)){d.rec=ms;d.fail=false;d.hid=hideMode} });
     render();
   };
   inp.onblur=close;
 }
+function unhideIfOff(){if(!hideMode)data.forEach(ev=>ev.forEach(t=>t.forEach(d=>{if(d.hid)d.hid=false})))}
+const bHide=document.getElementById('bHide');
+function setHideBtn(){bHide.innerHTML=hideMode?'기록<br>보이기':'기록<br>가리기';bHide.classList.toggle('on',hideMode)}
+bHide.onclick=()=>{
+  if(!hideMode){hideMode=true;setHideBtn();showTime();hint('기록 가리기 ON: 새 기록은 보이기를 누를 때까지 숨겨집니다.');return}
+  if(running){hint('측정이 끝난 뒤에 기록 보이기를 눌러주세요.');return}
+  hideMode=false;setHideBtn();showTime();unhideIfOff();render();hint('기록을 표시했습니다.');
+};
 document.getElementById('bReset').onclick=()=>resetSW();
 /* 실패: 최고점 방식 - 측정 중이면 폐기, 방금 정지로 기록된 값이 있으면 지우고 이전 기록으로 복원 / 전체기록(+순위) 방식 - 칸 기록을 바로 지우고 '-' 표시 */
 document.getElementById('bFail').onclick=()=>{
@@ -708,9 +729,9 @@ document.getElementById('bFail').onclick=()=>{
   resetSW();
   mutate(()=>{
     const d=data[sel.e][sel.t][sel.k];
-    if(mode!=='best'){d.rec=null;d.fail=true;return}      // 전체기록(+순위) 방식: 이전 기록을 기억하지 않고 바로 삭제 → '-'
+    if(mode!=='best'){d.rec=null;d.fail=true;d.hid=false;return}      // 전체기록(+순위) 방식: 이전 기록을 기억하지 않고 바로 삭제 → '-'
     if(!wasRunning&&same(lastMeasure,sel.e,sel.t,sel.k)){
-      d.rec=lastMeasure.rec;d.fail=lastMeasure.fail;     // 방금 측정값 삭제 → 이전 기록 복원
+      d.rec=lastMeasure.rec;d.fail=lastMeasure.fail;d.hid=lastMeasure.hid;     // 방금 측정값 삭제 → 이전 기록 복원
     }
     if(d.rec===null)d.fail=true;                          // 이전 기록이 없으면 '-'
   });
@@ -727,7 +748,7 @@ document.getElementById('bClear').onclick=()=>{
 bUndo.onclick=()=>{
   if(!undoStack.length)return;
   if(running)resetSW();
-  data=JSON.parse(undoStack.pop());lastMeasure=null;bUndo.disabled=!undoStack.length;
+  data=JSON.parse(undoStack.pop());unhideIfOff();lastMeasure=null;bUndo.disabled=!undoStack.length;
   render();hint('직전 변경을 되돌렸습니다.');
 };
 const cfm=document.getElementById('cfm');
@@ -738,7 +759,7 @@ cfm.onclick=ev=>{if(ev.target===cfm)closeCfm()};
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&cfm.classList.contains('on'))closeCfm()});
 document.getElementById('cfmOk').onclick=()=>{
   closeCfm();
-  resetSW();setManual(false);sel=null;teams=[];players=[];data=[];undoStack=[];lastMeasure=null;runCell=null;nameDraft={};bUndo.disabled=true;board.innerHTML='';
+  resetSW();hideMode=false;setHideBtn();showTime();setManual(false);sel=null;teams=[];players=[];data=[];undoStack=[];lastMeasure=null;runCell=null;nameDraft={};bUndo.disabled=true;board.innerHTML='';
   inputs.forEach(i=>i.value='');msg.textContent='';
   show('setup');
 };
