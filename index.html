@@ -437,7 +437,7 @@ function fmt(ms){
   const cs=Math.floor(ms/10)%100,s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000);
   return String(m)+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
 }
-const recText=(ev,d)=>d.mask?'?':d.rec!==null?(ev.type==='count'?d.rec:fmt(d.rec)):(d.fail?'-':'');
+const recText=(ev,d)=>d.mask?'':d.rec!==null?(ev.type==='count'?d.rec:fmt(d.rec)):(d.fail?'-':'');
 
 /* ---------- 점수판 그리기 ---------- */
 const board=document.getElementById('board');
@@ -460,7 +460,7 @@ function recHtmlOf(ev,d,e,t,k){
     ?`<div class="rec"><input inputmode="numeric" value="${val}" data-e="${e}" data-t="${t}" data-k="${k}"></div>`
     :`<div class="rec">${val}</div>`;
 }
-/* 기록 가리기: 가려진(hid) 기록은 표·점수·강조 계산에서 '?'로만 보이게 하는 보기용 데이터로 그린다 */
+/* 기록 가리기: 가려진(hid) 기록은 보이기 전까지 표에 입력되지 않은 것처럼(빈 칸) 보이고 점수·강조 계산에서도 빼는 보기용 데이터로 그린다 */
 function maskView(src){return src.map(ev=>ev.map(t=>t.map(d=>d.hid?{rec:null,fail:false,mask:true}:d)))}
 function render(){
   const real=data;data=maskView(real);
@@ -716,7 +716,7 @@ function unhideIfOff(){if(!hideMode)data.forEach(ev=>ev.forEach(t=>t.forEach(d=>
 const bHide=document.getElementById('bHide');
 function setHideBtn(){bHide.innerHTML=hideMode?'기록<br>보이기':'기록<br>가리기';bHide.classList.toggle('on',hideMode)}
 bHide.onclick=()=>{
-  if(!hideMode){hideMode=true;setHideBtn();showTime();hint('기록 가리기 ON: 새 기록은 보이기를 누를 때까지 숨겨집니다.');return}
+  if(!hideMode){hideMode=true;setHideBtn();showTime();hint('기록 가리기 ON: 스톱워치 숫자를 가립니다. 기록은 보이기를 누르면 표에 반영됩니다.');return}
   if(running){hint('측정이 끝난 뒤에 기록 보이기를 눌러주세요.');return}
   hideMode=false;setHideBtn();showTime();unhideIfOff();render();hint('기록을 표시했습니다.');
 };
