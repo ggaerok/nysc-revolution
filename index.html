@@ -44,14 +44,13 @@
 
   /* ---------- 점수판 화면 ---------- */
   #topbar{position:absolute;left:20px;right:20px;top:10px;height:165px}
-  #ttl{position:absolute;left:6px;top:14px;width:720px}
+  #ttl{position:absolute;left:6px;top:14px;width:660px}
   #ttl h1{display:flex;align-items:center;gap:12px;font-size:50px;line-height:1.15;letter-spacing:1px}
   #ttl p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .meta{display:flex;gap:10px;margin-top:10px;font-size:24px;min-width:0}
   .chip{flex:none;background:#e3deff;color:#5b55b8;font-weight:800;padding:3px 18px;border-radius:999px}
   .chip2{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#fff;color:var(--ink2);padding:3px 18px;border-radius:999px;box-shadow:inset 0 0 0 2px #dcd7f7}
   #sel{color:var(--pt);font-weight:800}
-  .th.hasadd{position:relative;padding-right:40px}
   .padds{position:absolute;right:6px;top:6px;bottom:6px;display:flex;flex-direction:column;justify-content:space-between;align-items:center}
   .padd{width:25px;height:25px;padding:0;border:0;border-radius:6px;background:rgba(255,255,255,.75);color:#2b3553;font-family:inherit;font-weight:800;font-size:19px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 rgba(75,90,140,.25)}
   .padd:hover{background:#fff}.padd:disabled{opacity:.35;cursor:not-allowed}
@@ -75,7 +74,7 @@
   #cfmOk{background:#ffb3c1;color:#7a1f3a}#cfmNo{background:#e1e6fb;color:#2b3553}
   #fx{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:50}
   #ttl #swHint{font-size:22px;color:#c8641c;height:28px;margin-top:4px;font-weight:700}
-  #sw{position:absolute;right:0;top:0;width:1180px;height:165px;background:#fff;border-radius:26px;padding:16px 20px;display:flex;align-items:stretch;gap:16px;box-shadow:inset 0 0 0 3px #e0dcf8,0 10px 26px rgba(110,100,200,.2)}
+  #sw{position:absolute;right:0;top:0;width:930px;height:165px;background:#fff;border-radius:26px;padding:16px 20px;display:flex;align-items:stretch;gap:16px;box-shadow:inset 0 0 0 3px #e0dcf8,0 10px 26px rgba(110,100,200,.2)}
   #swTime{width:340px;background:linear-gradient(180deg,#f6f3ff,#e6f2ff);border-radius:18px;font-size:80px;font-weight:800;text-align:center;line-height:133px;font-variant-numeric:tabular-nums;letter-spacing:1px;color:#5a5fd0;flex:none;box-shadow:inset 0 0 0 3px #d3d6f7}
   #swTime.run{color:#ef6c3e}
   #bigBtns{display:flex;gap:10px;flex:none}
@@ -87,10 +86,19 @@
   #bHide.on{background:#b9a8f5;color:#2a1a66;box-shadow:inset 0 0 0 4px #7a63d9,0 4px 0 rgba(75,90,140,.2)}
   #swTime.masked{color:#9aa0d8;letter-spacing:0;font-size:80px}
   .rec.mask{color:#9aa0d8}
-  #smallBtns{display:flex;flex-direction:column;gap:7px;width:116px;flex:none}
-  .btn.sm{flex:1;font-size:21px;border-radius:12px}
-  #rightBtns{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
-  #rightBtns .btn{flex:1;font-size:24px}
+  /* 보조 버튼 박스: 제목과 스톱워치 박스 사이. 화살표 버튼으로 열고 닫음 */
+  #tools{position:absolute;top:0;right:944px;width:296px;height:165px;background:#fff;border-radius:26px;padding:12px 14px;display:none;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:8px;box-shadow:inset 0 0 0 3px #e0dcf8,0 10px 26px rgba(110,100,200,.2)}
+  #stage.tools-on #tools{display:grid}
+  #tools .btn{font-size:21px;border-radius:12px;padding:0 4px;white-space:nowrap}
+  #tools #bManual{grid-column:1 / span 2}
+  #swToggle{flex:none;width:34px;border:0;border-radius:14px;background:#ece8ff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 3px #d9d3f7}
+  #swToggle:hover{background:#e2dcff}
+  #swToggle i{display:block;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-right:15px solid #7a63d9}
+  #stage.tools-on #swToggle i{border-right:0;border-left:15px solid #7a63d9}
+  .padds{display:none}
+  #stage.tools-on .padds{display:flex}
+  .th.hasadd{position:relative}
+  #stage.tools-on .th.hasadd{padding-right:40px}
   #bToggle{background:#b5ead7;color:#1d5c46}#bToggle.run{background:#ffe29a;color:#7a5200}
   #bFail{background:#ffb8c1;color:#8f1d33}
   #bReset{background:#dfe2f7;color:#3d4570}#bClear{background:#e6d6fa;color:#5a2f86}#bHome{background:#cfe6f8;color:#25507a}
@@ -304,21 +312,20 @@
         <div class="meta"><span class="chip" id="modeTxt">최고점 방식</span><span class="chip2">선택된 칸 <span id="sel">없음</span></span></div>
         <p id="swHint"></p>
       </div>
+      <div id="tools">
+        <button class="btn" id="bReset">리셋</button>
+        <button class="btn" id="bClear">칸 초기화</button>
+        <button class="btn" id="bHome">처음으로</button>
+        <button class="btn" id="bUndo" disabled>되돌리기</button>
+        <button class="btn" id="bManual">수기입력</button>
+      </div>
       <div id="sw">
+        <button id="swToggle" type="button" title="보조 버튼 · 참가자 추가 버튼 보기/숨기기" aria-label="보조 버튼 보기/숨기기" aria-expanded="false"><i></i></button>
         <div id="swTime">0:00.00</div>
         <div id="bigBtns">
           <button class="btn big" id="bToggle">시작</button>
           <button class="btn big" id="bFail">실패</button>
           <button class="btn big" id="bHide">기록<br>가리기</button>
-        </div>
-        <div id="smallBtns">
-          <button class="btn sm" id="bReset">리셋</button>
-          <button class="btn sm" id="bClear">칸 초기화</button>
-          <button class="btn sm" id="bHome">처음으로</button>
-        </div>
-        <div id="rightBtns">
-          <button class="btn" id="bUndo" disabled>되돌리기</button>
-          <button class="btn" id="bManual">수기입력</button>
         </div>
       </div>
     </div>
@@ -391,7 +398,7 @@ function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.to
 function startBoard(){
   data=EVENTS.map((_,e)=>teams.map((_,t)=>mode!=='best'?players[e][t].map(newEntry):[newEntry()]));
   sel=null;undoStack=[];lastMeasure=null;runCell=null;bUndo.disabled=true;
-  resetSW();setManual(false);
+  resetSW();setTools(false);setManual(false);
   document.getElementById('modeTxt').textContent=mode==='all'?'전체기록 방식':mode==='rank'?'전체기록+순위':'최고점 방식';
   buildBoard();
   show('boardScreen');
@@ -748,6 +755,10 @@ function openManual(unit,e,t,k){
 }
 function applyPending(){data.forEach(ev=>ev.forEach(t=>t.forEach(d=>{if(d.pend!=null){d.rec=d.pend;d.fail=false}d.pend=null})))}
 function unhideIfOff(){if(!hideMode)data.forEach(ev=>ev.forEach(t=>t.forEach(d=>{d.pend=null})))}
+/* 보조 버튼(리셋·칸 초기화·처음으로·되돌리기·수기입력)과 참가자 추가 버튼은 평소에 숨기고, 화살표 버튼으로 보이기/숨기기 (오작동 방지) */
+const swToggle=document.getElementById('swToggle');
+function setTools(on){stage.classList.toggle('tools-on',on);swToggle.setAttribute('aria-expanded',on?'true':'false')}
+swToggle.onclick=()=>setTools(!stage.classList.contains('tools-on'));
 const bHide=document.getElementById('bHide');
 function setHideBtn(){bHide.innerHTML=hideMode?'기록<br>보이기':'기록<br>가리기';bHide.classList.toggle('on',hideMode)}
 bHide.onclick=()=>{
@@ -826,7 +837,7 @@ cfm.onclick=ev=>{if(ev.target===cfm)closeCfm()};
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&cfm.classList.contains('on'))closeCfm()});
 document.getElementById('cfmOk').onclick=()=>{
   closeCfm();
-  resetSW();hideMode=false;setHideBtn();showTime();setManual(false);sel=null;teams=[];players=[];data=[];undoStack=[];lastMeasure=null;runCell=null;nameDraft={};bUndo.disabled=true;board.innerHTML='';
+  resetSW();hideMode=false;setHideBtn();showTime();setTools(false);setManual(false);sel=null;teams=[];players=[];data=[];undoStack=[];lastMeasure=null;runCell=null;nameDraft={};bUndo.disabled=true;board.innerHTML='';
   inputs.forEach(i=>i.value='');msg.textContent='';
   show('setup');
 };
